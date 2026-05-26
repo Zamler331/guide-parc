@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic"
+
 import { getAttractionBySlug } from "@/lib/attractions"
 import { notFound } from "next/navigation"
 
