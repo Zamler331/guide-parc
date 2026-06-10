@@ -2,10 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import {
-  TransformWrapper,
-  TransformComponent,
-} from "react-zoom-pan-pinch"
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch"
 
 const TYPES = [
   { value: "all", label: "Tous", icon: "✨" },
@@ -47,98 +44,169 @@ function getPointLink(point: any) {
   return point.target_url || "/carte"
 }
 
+function getZoneClusters(points: any[]) {
+  const groups: Record<string, any[]> = {}
+
+  points.forEach((point) => {
+    const key = point.area_id || "no-area"
+
+    if (!groups[key]) groups[key] = []
+
+    groups[key].push(point)
+  })
+
+  return Object.entries(groups).map(([areaId, items]) => {
+    const avgX =
+      items.reduce((sum, point) => sum + Number(point.x), 0) / items.length
+
+    const avgY =
+      items.reduce((sum, point) => sum + Number(point.y), 0) / items.length
+
+    return {
+      areaId,
+      area: items[0]?.area,
+      count: items.length,
+      x: avgX,
+      y: avgY,
+    }
+  })
+}
+
 export default function InteractiveMap({ points }: { points: any[] }) {
   const [filter, setFilter] = useState("all")
   const [selectedPoint, setSelectedPoint] = useState<any | null>(null)
+  const [scale, setScale] = useState(1)
 
   const filteredPoints =
     filter === "all" ? points : points.filter((point) => point.type === filter)
 
-  return (
-    <div className="space-y-3 px-4 pb-6">
-      <div className="flex gap-2 overflow-x-auto pb-1">
-        {TYPES.map((type) => {
-          const active = filter === type.value
+  const showClusters = scale < 1.6 && filter === "all"
+  const clusters = getZoneClusters(filteredPoints)
 
-          return (
-            <button
-              key={type.value}
-              type="button"
-              onClick={() => {
-                setFilter(type.value)
-                setSelectedPoint(null)
-              }}
-              className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-sm transition ${
-                active
-                  ? "border-gray-900 bg-gray-900 text-white"
-                  : "border-gray-200 bg-white text-gray-600"
-              }`}
-            >
-              {type.icon} {type.label}
-            </button>
-          )
-        })}
+  return (
+    <div className="relative h-[calc(100vh-64px)] overflow-hidden bg-[#a3a463]">
+      <div className="absolute left-0 right-0 top-0 z-30 bg-white/90 px-3 py-3 backdrop-blur">
+        <div className="flex gap-2 overflow-x-auto">
+          {TYPES.map((type) => {
+            const active = filter === type.value
+
+            return (
+              <button
+                key={type.value}
+                type="button"
+                onClick={() => {
+                  setFilter(type.value)
+                  setSelectedPoint(null)
+                }}
+                className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-sm font-semibold ${
+                  active
+                    ? "border-gray-900 bg-gray-900 text-white"
+                    : "border-gray-200 bg-white text-gray-600"
+                }`}
+              >
+                {type.icon} {type.label}
+              </button>
+            )
+          })}
+        </div>
       </div>
 
-      <div className="overflow-hidden rounded-3xl border bg-white shadow-sm">
-        <TransformWrapper
-          initialScale={1}
-          minScale={1}
-          maxScale={4}
-          centerOnInit
-          wheel={{ step: 0.15 }}
-          pinch={{ step: 5 }}
-          doubleClick={{ disabled: true }}
-          panning={{ velocityDisabled: true }}
-        >
-          {({ zoomIn, zoomOut, resetTransform }) => (
-            <>
-              <div className="flex items-center justify-between border-b bg-white px-3 py-2">
-                <p className="text-xs text-gray-500">
-                  Pincez ou faites glisser la carte
-                </p>
+      <TransformWrapper
+        initialScale={1.2}
+        minScale={1}
+        maxScale={7}
+        centerOnInit
+        limitToBounds={true}
+        wheel={{ step: 0.15 }}
+        pinch={{ step: 5 }}
+        doubleClick={{ disabled: true }}
+        panning={{ velocityDisabled: true }}
+        onZoom={(ref: any) => setScale(ref.state.scale)}
+        onPanning={(ref: any) => setScale(ref.state.scale)}
+      >
+        {({ zoomIn, zoomOut, resetTransform, zoomToElement }: any) => (
+          <>
+            <div className="absolute bottom-28 right-3 z-30 flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => zoomIn()}
+                className="h-10 w-10 rounded-full bg-white text-lg font-black shadow"
+              >
+                +
+              </button>
 
-                <div className="flex gap-1">
-                  <button
-                    type="button"
-                    onClick={() => zoomOut()}
-                    className="h-8 w-8 rounded-full bg-gray-100 text-sm font-bold"
-                  >
-                    -
-                  </button>
+              <button
+                type="button"
+                onClick={() => zoomOut()}
+                className="h-10 w-10 rounded-full bg-white text-lg font-black shadow"
+              >
+                -
+              </button>
 
-                  <button
-                    type="button"
-                    onClick={() => resetTransform()}
-                    className="h-8 rounded-full bg-gray-100 px-3 text-xs font-semibold"
-                  >
-                    Reset
-                  </button>
+              <button
+                type="button"
+                onClick={() => resetTransform()}
+                className="rounded-full bg-white px-3 py-2 text-xs font-bold shadow"
+              >
+                Reset
+              </button>
+            </div>
 
-                  <button
-                    type="button"
-                    onClick={() => zoomIn()}
-                    className="h-8 w-8 rounded-full bg-gray-100 text-sm font-bold"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
+            <TransformComponent
+              wrapperClass="!h-full !w-full !bg-[#a3a463]"
+              contentClass="!w-auto !h-auto !bg-[#a3a463]"
+            >
+              <div className="relative mt-16 w-[1100px] max-w-none">
+                <img
+                  src="/map.png"
+                  alt="Plan du parc"
+                  className="block w-full select-none"
+                  draggable={false}
+                />
 
-              <div className="h-[520px] bg-gray-100">
-                <TransformComponent
-                  wrapperClass="!w-full !h-full"
-                  contentClass="!w-full"
-                >
-                  <div className="relative w-full">
-                    <img
-                      src="/map.png"
-                      alt="Plan du parc"
-                      className="block w-full select-none"
-                      draggable={false}
-                    />
+                {showClusters
+                  ? clusters.map((cluster) => {
+                      const areaName = cluster.area?.name || "Autres"
+                      const areaColor = cluster.area?.color || "#111827"
+                      const clusterId = `cluster-${cluster.areaId}`
 
-                    {filteredPoints.map((point) => {
+                      return (
+                        <button
+                          id={clusterId}
+                          key={cluster.areaId}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setSelectedPoint(null)
+
+                            if (zoomToElement) {
+                              zoomToElement(clusterId, 2.8, 500)
+
+                              setTimeout(() => {
+                                setScale(2.8)
+                              }, 550)
+                            }
+                          }}
+                          className="absolute"
+                          style={{
+                            left: `${cluster.x}%`,
+                            top: `${cluster.y}%`,
+                            transform: `translate(-50%, -50%) scale(${1 / scale})`,
+                            transformOrigin: "center",
+                          }}
+                          title={areaName}
+                        >
+                          <span
+                          className="flex items-center gap-1 rounded-full border-1 border-white px-2 py-1 text-[10px] font-black text-white shadow-lg"
+                          style={{ backgroundColor: areaColor }}
+                        >
+                          <span>📍</span>
+                          <span>{areaName}</span>
+                        </span>
+                        </button>
+                      )
+                    })
+                  : filteredPoints.map((point) => {
                       const selected = selectedPoint?.id === point.id
                       const type = getType(point.type)
 
@@ -150,38 +218,41 @@ export default function InteractiveMap({ points }: { points: any[] }) {
                             e.stopPropagation()
                             setSelectedPoint(point)
                           }}
-                          className="absolute -translate-x-1/2 -translate-y-1/2"
+                          className="absolute"
                           style={{
                             left: `${point.x}%`,
                             top: `${point.y}%`,
+                            transform: `translate(-50%, -50%) scale(${1 / scale})`,
+                            transformOrigin: "center",
                           }}
                           aria-label={point.name}
                         >
                           <span
-                            className={`flex h-8 w-8 items-center justify-center rounded-full border-2 bg-white text-sm shadow-md transition ${getColor(
-                              point.type
-                            )} ${
-                              selected
-                                ? "scale-110 ring-4 ring-white"
-                                : "hover:scale-105"
+                            className={`flex h-9 w-9 items-center justify-center rounded-full border-2 text-sm shadow-lg ${
+                              selected ? "ring-4 ring-white" : ""
                             }`}
+                            style={{
+                              backgroundColor: point.area?.color || "#ffffff",
+                              borderColor: "white",
+                              color: "white",
+                            }}
                           >
                             {type.icon}
                           </span>
                         </button>
                       )
                     })}
-                  </div>
-                </TransformComponent>
               </div>
-            </>
-          )}
-        </TransformWrapper>
+            </TransformComponent>
+          </>
+        )}
+      </TransformWrapper>
 
-        {selectedPoint && (
+      {selectedPoint && (
+        <div className="absolute bottom-3 left-3 right-3 z-40">
           <Link
             href={getPointLink(selectedPoint)}
-            className="block border-t bg-white p-3"
+            className="block rounded-3xl bg-white p-3 shadow-2xl"
           >
             <div className="flex gap-3">
               <div className="h-20 w-24 shrink-0 overflow-hidden rounded-2xl bg-gray-100">
@@ -192,31 +263,41 @@ export default function InteractiveMap({ points }: { points: any[] }) {
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center text-2xl">
+                  <div className="flex h-full w-full items-center justify-center text-3xl">
                     {getType(selectedPoint.type).icon}
                   </div>
                 )}
               </div>
 
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                <p className="text-xs font-bold uppercase tracking-wide text-gray-400">
                   {getType(selectedPoint.type).label}
                 </p>
 
-                <h2 className="mt-1 truncate text-lg font-bold text-gray-900">
+                <h2 className="mt-1 truncate text-lg font-black text-gray-900">
                   {selectedPoint.name}
                 </h2>
+
+                {selectedPoint.area?.name && (
+                  <p className="mt-1 text-xs font-semibold text-gray-500">
+                    📍 {selectedPoint.area.name}
+                  </p>
+                )}
 
                 {selectedPoint.short_description && (
                   <p className="mt-1 line-clamp-2 text-sm text-gray-600">
                     {selectedPoint.short_description}
                   </p>
                 )}
+
+                <p className="mt-2 text-xs font-bold text-gray-400">
+                  Toucher pour ouvrir →
+                </p>
               </div>
             </div>
           </Link>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }

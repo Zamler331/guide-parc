@@ -1,19 +1,39 @@
 import { supabase } from "./supabase"
 
-export async function getActiveAlerts() {
-  const now = new Date().toISOString()
+export async function getAlerts() {
+  const { data, error } = await supabase
+    .from("alerts")
+    .select("*")
+    .order("starts_at", { ascending: false, nullsFirst: false })
 
+  if (error) {
+    console.error("Erreur getAlerts:", JSON.stringify(error, null, 2))
+    return []
+  }
+
+  return data || []
+}
+
+export async function getActiveAlerts() {
   const { data, error } = await supabase
     .from("alerts")
     .select("*")
     .eq("is_active", true)
-    .lte("starts_at", now)
-    .gte("ends_at", now)
 
   if (error) {
-    console.error("Erreur alerts:", error)
+    console.error("Erreur getActiveAlerts:", JSON.stringify(error, null, 2))
     return []
   }
 
-  return data
+  const now = new Date()
+
+  return (data || []).filter((alert) => {
+    const startsAt = alert.starts_at ? new Date(alert.starts_at) : null
+    const endsAt = alert.ends_at ? new Date(alert.ends_at) : null
+
+    if (startsAt && startsAt > now) return false
+    if (endsAt && endsAt < now) return false
+
+    return true
+  })
 }

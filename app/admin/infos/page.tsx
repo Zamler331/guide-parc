@@ -1,11 +1,19 @@
-export default function AdminInfosPage() {
-  return (
-    <main className="p-4">
-      <h1 className="text-2xl font-bold">Admin Infos ℹ️</h1>
+import InfoEditor from "@/components/infos/InfoEditor"
+import { getPracticalInfos } from "@/lib/practical-infos"
 
-      <p className="mt-2 text-gray-600">
-        Gestion des informations pratiques à venir.
-      </p>
-    </main>
+export default async function AdminInfosPage() {
+  const infos = await getPracticalInfos()
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-black">Infos pratiques ℹ️</h1>
+        <p className="mt-1 text-gray-500">
+          Créez, modifiez et organisez les informations visibles dans l’onglet Infos.
+        </p>
+      </div>
+
+      <InfoEditor infos={infos} />
+    </div>
   )
 }

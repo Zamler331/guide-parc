@@ -3,15 +3,23 @@
 import ShowCard from "./ShowCard"
 import { useOfflineData } from "@/hooks/useOfflineData"
 
-export default function OfflineProgram({ shows }: { shows: any[] }) {
-  const data = useOfflineData("shows", shows)
+export default function OfflineProgram({
+  showTimes,
+}: {
+  showTimes: any[]
+}) {
+  const data = useOfflineData("shows", showTimes)
 
   return (
     <div className="space-y-3 px-4 pb-6">
       {data.length === 0 ? (
-        <p className="text-gray-500">Aucun spectacle aujourd’hui.</p>
+        <p className="rounded-3xl bg-white p-4 text-gray-500 shadow-sm">
+          Aucun spectacle aujourd’hui.
+        </p>
       ) : (
-        data.map((show: any) => <ShowCard key={show.id} show={show} />)
+        data.map((showTime: any) => (
+          <ShowCard key={showTime.id} showTime={showTime} />
+        ))
       )}
     </div>
   )

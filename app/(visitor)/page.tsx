@@ -1,15 +1,18 @@
 import Link from "next/link"
-import { getActiveAlerts } from "@/lib/alerts"
-import AlertBanner from "@/components/alerts/AlertBanner"
-import OfflineSync from "@/components/offline/OfflineSync"
+import { getTodayOpening } from "@/lib/opening-hours"
+import TodayOpeningCard from "@/components/opening/TodayOpeningCard"
 
 export default async function HomePage() {
-  const alerts = await getActiveAlerts()
+
+  const opening = await getTodayOpening()
+  console.log("OPENING TODAY:", opening)
 
   return (
     <main className="h-screen overflow-hidden bg-blue-700 text-white">
       <section className="relative flex h-full flex-col items-center justify-between px-4 py-5 text-center">
         <div className="absolute inset-0 bg-gradient-to-b from-blue-500 via-blue-600 to-blue-900" />
+
+<TodayOpeningCard opening={opening} />
 
         <div className="relative z-10">
           <h1 className="text-4xl font-black leading-tight drop-shadow-lg">
@@ -22,6 +25,7 @@ export default async function HomePage() {
             <br />
             pleine d’aventures !
           </p>
+
         </div>
 
         <img
@@ -30,7 +34,7 @@ export default async function HomePage() {
           className="relative z-10 -mt-2 max-h-[310px] w-auto object-contain drop-shadow-2xl"
         />
 
-        <div className="relative z-20 -mt-12 grid w-full grid-cols-3 gap-3">
+        <div className="relative z-20 -mt-12 grid w-full grid-cols-2 gap-3">
           <HomeButton
             href="/attractions"
             color="bg-pink-500"
@@ -53,6 +57,14 @@ export default async function HomePage() {
             shadow="shadow-orange-800/40"
             icon="🎭"
             label="Programme"
+          />
+
+          <HomeButton
+            href="/horaires"
+            color="bg-blue-500"
+            shadow="shadow-blue-800/40"
+            icon="🕒"
+            label="Horaires"
           />
         </div>
 

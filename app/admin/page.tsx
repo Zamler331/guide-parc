@@ -31,27 +31,33 @@ const adminLinks = [
     title: "Alertes",
     description: "Messages exceptionnels sur l’accueil",
   },
+  {
+    href: "/admin/opening-hours",
+    icon: "🕒",
+    title: "Horiares",
+    description: "Définir les jours et heures d'ouverture du parc",
+  },
 ]
 
 export default function AdminPage() {
   return (
-    <main className="min-h-screen bg-gray-100 p-4">
-      <section className="rounded-3xl bg-gray-900 p-5 text-white shadow-sm">
+    <div>
+      <section className="rounded-3xl bg-gray-900 p-6 text-white shadow-sm">
         <p className="text-sm text-gray-300">Interface de gestion</p>
-        <h1 className="mt-1 text-2xl font-black">Admin du parc ⚙️</h1>
-        <p className="mt-2 text-sm text-gray-300">
+        <h1 className="mt-1 text-3xl font-black">Admin du parc ⚙️</h1>
+        <p className="mt-2 max-w-2xl text-sm text-gray-300">
           Gérez les contenus visibles dans l’application visiteur.
         </p>
       </section>
 
-      <section className="mt-5 space-y-3">
+      <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {adminLinks.map((item) => (
           <Link
             key={item.href}
             href={item.href}
-            className="flex items-center gap-4 rounded-3xl bg-white p-4 shadow-sm transition active:scale-[0.98]"
+            className="flex items-center gap-4 rounded-3xl bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
           >
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gray-100 text-2xl">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gray-100 text-2xl">
               {item.icon}
             </div>
 
@@ -67,24 +73,24 @@ export default function AdminPage() {
         ))}
       </section>
 
-      <section className="mt-5 rounded-3xl border bg-white p-4">
+      <section className="mt-6 rounded-3xl border bg-white p-5">
         <h2 className="font-bold text-gray-900">État du prototype</h2>
 
-        <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-          <div className="rounded-2xl bg-green-50 p-3 text-green-700">
+        <div className="mt-4 grid gap-3 text-sm md:grid-cols-4">
+          <div className="rounded-2xl bg-green-50 p-4 text-green-700">
             PWA active
           </div>
-          <div className="rounded-2xl bg-blue-50 p-3 text-blue-700">
+          <div className="rounded-2xl bg-blue-50 p-4 text-blue-700">
             Offline actif
           </div>
-          <div className="rounded-2xl bg-purple-50 p-3 text-purple-700">
+          <div className="rounded-2xl bg-purple-50 p-4 text-purple-700">
             Carte éditable
           </div>
-          <div className="rounded-2xl bg-orange-50 p-3 text-orange-700">
+          <div className="rounded-2xl bg-orange-50 p-4 text-orange-700">
             Supabase connecté
           </div>
         </div>
       </section>
-    </main>
+    </div>
   )
 }
