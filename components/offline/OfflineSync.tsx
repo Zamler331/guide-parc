@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { saveToCache } from "@/lib/offline-cache"
+import { saveMapImageOffline } from "@/lib/offline-map-image"
 
 export default function OfflineSync() {
   const [status, setStatus] = useState("Préparation du guide...")
@@ -12,6 +13,7 @@ export default function OfflineSync() {
       try {
         await Promise.allSettled([
           fetch("/"),
+          fetch("/offline"),
           fetch("/carte"),
           fetch("/attractions"),
           fetch("/programme"),
@@ -19,6 +21,8 @@ export default function OfflineSync() {
           fetch("/horaires"),
           fetch("/map.png", { cache: "reload" }),
         ])
+
+        await saveMapImageOffline()
 
         const [attractions, mapPoints, infos, shows, alerts] =
           await Promise.all([

@@ -72,7 +72,13 @@ function getZoneClusters(points: any[]) {
   })
 }
 
-export default function InteractiveMap({ points }: { points: any[] }) {
+export default function InteractiveMap({
+  points,
+  mapSrc = "/map.png",
+}: {
+  points: any[]
+  mapSrc?: string
+}) {
   const [filter, setFilter] = useState("all")
   const [selectedPoint, setSelectedPoint] = useState<any | null>(null)
   const [scale, setScale] = useState(1)
@@ -158,7 +164,7 @@ export default function InteractiveMap({ points }: { points: any[] }) {
             >
               <div className="relative mt-16 w-[1100px] max-w-none">
                 <img
-                  src="/map.png"
+                  src={mapSrc}
                   alt="Plan du parc"
                   className="block w-full select-none"
                   draggable={false}

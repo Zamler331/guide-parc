@@ -1,22 +1,20 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import InteractiveMap from "./InteractiveMap"
 import { useOfflineData } from "@/hooks/useOfflineData"
+import { readMapImageOffline } from "@/lib/offline-map-image"
 
 export default function OfflineMap({ points }: { points: any[] }) {
   const data = useOfflineData("map_points", points)
+  const [mapSrc, setMapSrc] = useState("/map.png")
 
   useEffect(() => {
-    async function cacheMapImage() {
-      if (!("caches" in window)) return
-
-      const cache = await caches.open("park-assets")
-      await cache.add("/map.png")
+    if (!navigator.onLine) {
+      const cached = readMapImageOffline()
+      if (cached) setMapSrc(cached)
     }
-
-    cacheMapImage().catch(console.error)
   }, [])
 
-  return <InteractiveMap points={data} />
+  return <InteractiveMap points={data} mapSrc={mapSrc} />
 }
