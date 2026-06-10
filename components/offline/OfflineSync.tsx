@@ -22,12 +22,10 @@ export default function OfflineSync() {
 
         const [attractions, mapPoints, infos, shows, alerts] =
           await Promise.all([
-            supabase
-              .from("attractions")
-              .select(`
-                *,
-                park_areas(*)
-              `),
+            supabase.from("attractions").select(`
+              *,
+              park_areas(*)
+            `),
 
             supabase
               .from("map_points")
@@ -57,15 +55,32 @@ export default function OfflineSync() {
               .eq("is_active", true),
           ])
 
-        saveToCache("attractions", attractions.data || [])
+        const attractionsData = attractions.data || []
+
+        const showTimesData = (shows.data || []).filter(
+          (time: any) => time.show?.status === "active"
+        )
+
+        await Promise.allSettled([
+          ...attractionsData
+            .filter((attraction: any) => attraction.slug)
+            .map((attraction: any) =>
+              fetch(`/attractions/${attraction.slug}`)
+            ),
+
+          ...showTimesData
+            .filter((time: any) => time.show?.slug)
+            .map((time: any) =>
+              fetch(`/programme/${time.show.slug}`)
+            ),
+
+          fetch("/map.png", { cache: "reload" }),
+        ])
+
+        saveToCache("attractions", attractionsData)
         saveToCache("map_points", mapPoints.data || [])
         saveToCache("practical_infos", infos.data || [])
-        saveToCache(
-          "shows",
-          (shows.data || []).filter(
-            (time: any) => time.show?.status === "active"
-          )
-        )
+        saveToCache("shows", showTimesData)
         saveToCache("alerts", alerts.data || [])
 
         setStatus("Guide disponible hors ligne ✅")
