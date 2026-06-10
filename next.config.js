@@ -23,14 +23,14 @@ const withPWA = require("next-pwa")({
         plugins: [
           {
             handlerDidError: async ({ request }) => {
-              const cache = await caches.open("park-pages-cache")
-              const path = new URL(request.url).pathname
-              const cached = await cache.match(path)
+  const cache = await caches.open("park-pages-cache");
+  const path = new URL(request.url).pathname;
+  const cached = await cache.match(path);
 
-              if (cached) return cached
+  if (cached) return cached;
 
-              return self.fallback(request)
-            },
+  return self.fallback(request);
+},
           },
         ],
       },
