@@ -20,6 +20,19 @@ const withPWA = require("next-pwa")({
           maxEntries: 80,
           maxAgeSeconds: 30 * 24 * 60 * 60,
         },
+        plugins: [
+          {
+            handlerDidError: async ({ request }) => {
+              const cache = await caches.open("park-pages-cache")
+              const path = new URL(request.url).pathname
+              const cached = await cache.match(path)
+
+              if (cached) return cached
+
+              return self.fallback(request)
+            },
+          },
+        ],
       },
     },
     {

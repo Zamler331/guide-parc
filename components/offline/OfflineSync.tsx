@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { saveToCache } from "@/lib/offline-cache"
 import { saveMapImageOffline } from "@/lib/offline-map-image"
+import { saveOfflinePage } from "@/lib/offline-pages"
 
 export default function OfflineSync() {
   const [status, setStatus] = useState("Préparation du guide...")
@@ -66,19 +67,25 @@ export default function OfflineSync() {
         )
 
         await Promise.allSettled([
+          saveOfflinePage("/"),
+          saveOfflinePage("/carte"),
+          saveOfflinePage("/attractions"),
+          saveOfflinePage("/programme"),
+          saveOfflinePage("/infos"),
+          saveOfflinePage("/horaires"),
+          saveOfflinePage("/offline"),
+
           ...attractionsData
             .filter((attraction: any) => attraction.slug)
             .map((attraction: any) =>
-              fetch(`/attractions/${attraction.slug}`)
+              saveOfflinePage(`/attractions/${attraction.slug}`)
             ),
 
           ...showTimesData
             .filter((time: any) => time.show?.slug)
             .map((time: any) =>
-              fetch(`/programme/${time.show.slug}`)
+              saveOfflinePage(`/programme/${time.show.slug}`)
             ),
-
-          fetch("/map.png", { cache: "reload" }),
         ])
 
         saveToCache("attractions", attractionsData)
