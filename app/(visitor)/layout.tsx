@@ -1,5 +1,6 @@
 import BottomNav from "@/components/layout/BottomNav"
-import AlertTicker from "@/components/alerts/AlertTicker"
+import OfflineAlertTicker from "@/components/alerts/OfflineAlertTicker"
+import OfflineSync from "@/components/offline/OfflineSync"
 import { getActiveAlerts } from "@/lib/alerts"
 
 export default async function VisitorLayout({
@@ -12,10 +13,11 @@ export default async function VisitorLayout({
   return (
     <div className="min-h-screen bg-gray-100 flex justify-center">
       <div className="w-full max-w-md min-h-screen bg-white shadow-sm">
-        <AlertTicker alerts={alerts} />
+        <OfflineAlertTicker alerts={alerts} />
 
         <div className="min-h-screen pb-16">
           {children}
+          <OfflineSync />
           <BottomNav />
         </div>
       </div>

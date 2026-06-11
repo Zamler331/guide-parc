@@ -1,5 +1,5 @@
 import { getOpeningDaysForYear } from "@/lib/opening-hours"
-import VisitorOpeningCalendar from "@/components/opening/VisitorOpeningCalendar"
+import OfflineOpeningCalendar from "@/components/opening/OfflineOpeningCalendar"
 
 export default async function HorairesPage() {
   const year = new Date().getFullYear()
@@ -19,7 +19,7 @@ export default async function HorairesPage() {
           </p>
         </div>
 
-        <VisitorOpeningCalendar
+        <OfflineOpeningCalendar
           year={year}
           openingDays={openingDays}
         />

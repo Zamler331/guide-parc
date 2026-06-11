@@ -10,14 +10,17 @@ export function useOfflineData<T>(
   const [data, setData] = useState(serverData)
 
   useEffect(() => {
-    if (!navigator.onLine) {
-      const cached = readFromCache(cacheKey)
+    const cached = readFromCache(cacheKey)
+    const hasServerData = Array.isArray(serverData)
+      ? serverData.length > 0
+      : Boolean(serverData)
 
+    if (!navigator.onLine || !hasServerData) {
       if (cached) {
         setData(cached)
       }
     }
-  }, [cacheKey])
+  }, [cacheKey, serverData])
 
   return data
 }

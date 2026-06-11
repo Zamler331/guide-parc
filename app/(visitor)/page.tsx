@@ -1,5 +1,5 @@
 import { getTodayOpening } from "@/lib/opening-hours"
-import TodayOpeningCard from "@/components/opening/TodayOpeningCard"
+import OfflineTodayOpeningCard from "@/components/opening/OfflineTodayOpeningCard"
 
 export default async function HomePage() {
 
@@ -10,7 +10,7 @@ export default async function HomePage() {
       <section className="relative flex h-full flex-col items-center justify-between px-4 py-5 text-center">
         <div className="absolute inset-0 bg-gradient-to-b from-blue-500 via-blue-600 to-blue-900" />
 
-<TodayOpeningCard opening={opening} />
+<OfflineTodayOpeningCard opening={opening} />
 
         <div className="relative z-10">
           <h1 className="text-4xl font-black leading-tight drop-shadow-lg">

@@ -1,4 +1,4 @@
-const withPWA = require("next-pwa")({
+const withPWA = require("@ducanh2912/next-pwa").default({
   dest: "public",
   register: true,
   skipWaiting: true,
@@ -8,49 +8,7 @@ const withPWA = require("next-pwa")({
   fallbacks: {
     document: "/offline",
   },
-
-  runtimeCaching: [
-    {
-      urlPattern: ({ request }) => request.mode === "navigate",
-      handler: "NetworkFirst",
-      options: {
-        cacheName: "pages-cache",
-        networkTimeoutSeconds: 3,
-        expiration: {
-          maxEntries: 80,
-          maxAgeSeconds: 30 * 24 * 60 * 60,
-        },
-        plugins: [
-          {
-            handlerDidError: async ({ request }) => {
-  const cache = await caches.open("park-pages-cache");
-  const path = new URL(request.url).pathname;
-  const cached = await cache.match(path);
-
-  if (cached) return cached;
-
-  return self.fallback(request);
-},
-          },
-        ],
-      },
-    },
-    {
-      urlPattern: ({ request }) =>
-        request.destination === "image" ||
-        request.destination === "script" ||
-        request.destination === "style" ||
-        request.destination === "font",
-      handler: "CacheFirst",
-      options: {
-        cacheName: "static-assets-cache",
-        expiration: {
-          maxEntries: 200,
-          maxAgeSeconds: 30 * 24 * 60 * 60,
-        },
-      },
-    },
-  ],
+  cacheOnFrontEndNav: true,
 })
 
 module.exports = withPWA({

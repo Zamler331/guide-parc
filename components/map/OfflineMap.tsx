@@ -10,9 +10,13 @@ export default function OfflineMap({ points }: { points: any[] }) {
   const [mapSrc, setMapSrc] = useState("/map.png")
 
   useEffect(() => {
-    if (!navigator.onLine) {
-      const cached = readImageOffline("offline_map_image")
+    async function loadCachedMap() {
+      const cached = await readImageOffline("offline_map_image", "/map.png")
       if (cached) setMapSrc(cached)
+    }
+
+    if (!navigator.onLine) {
+      loadCachedMap()
     }
   }, [])
 

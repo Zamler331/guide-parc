@@ -5,24 +5,31 @@
   "scripts": {
     "dev": "next dev --webpack",
     "build": "next build --webpack",
-    "start": "next start"
+    "start": "next start",
+    "android:add": "capacitor add android",
+    "android:sync": "capacitor sync android",
+    "android:open": "capacitor open android",
+    "android:build:aab": "cd android && .\\gradlew.bat bundleRelease"
   },
   "dependencies": {
+    "@ducanh2912/next-pwa": "^10.2.9",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.105.1",
-    "next": "16.2.4",
-    "next-pwa": "^5.6.0",
+    "next": "16.2.9",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-zoom-pan-pinch": "^4.0.3"
   },
   "devDependencies": {
+    "@capacitor/android": "^8.4.0",
+    "@capacitor/cli": "^8.4.0",
+    "@capacitor/core": "^8.4.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.2.4",
+    "eslint-config-next": "16.2.9",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

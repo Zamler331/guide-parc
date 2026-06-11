@@ -1,4 +1,4 @@
-const CACHE_NAME = "park-pages-cache"
+const CACHE_NAME = "pages"
 
 export async function saveOfflinePage(path: string) {
   if (typeof window === "undefined") return

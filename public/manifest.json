@@ -2,11 +2,15 @@
   "name": "Guide Parc",
   "short_name": "Guide Parc",
   "description": "Application guide du parc",
+  "id": "/",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#111827",
   "orientation": "portrait",
+  "categories": ["travel", "navigation", "entertainment"],
+  "lang": "fr",
   "icons": [
     {
       "src": "/icon-192.png",
@@ -16,7 +20,24 @@
     {
       "src": "/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Carte du parc",
+      "short_name": "Carte",
+      "description": "Ouvrir la carte interactive du parc",
+      "url": "/carte",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Programme",
+      "short_name": "Programme",
+      "description": "Voir les spectacles et animations",
+      "url": "/programme",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }
