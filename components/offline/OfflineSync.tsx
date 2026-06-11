@@ -107,11 +107,13 @@ export default function OfflineSync() {
               saveOfflinePage(`/attractions/${attraction.slug}`)
             ),
 
-          ...showTimesData
-            .filter((time: any) => time.show?.slug)
-            .map((time: any) =>
-              saveOfflinePage(`/programme/${time.show.slug}`)
-            ),
+          ...Array.from(
+  new Set(
+    showTimesData
+      .filter((time: any) => time.show?.slug)
+      .map((time: any) => time.show.slug)
+  )
+).map((slug: string) => saveOfflinePage(`/programme/${slug}`)),
         ])
 
         await saveRemoteImagesOffline([
