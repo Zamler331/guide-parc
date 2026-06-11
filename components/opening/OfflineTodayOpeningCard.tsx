@@ -13,7 +13,7 @@ function getTodayKey() {
 }
 
 export default function OfflineTodayOpeningCard({ opening }: { opening: any }) {
-  const openingDays = useOfflineData<any[]>("opening_days", [])
+  const openingDays = useOfflineData("opening_days", [])
   const cachedOpening = openingDays.find((day) => day.date === getTodayKey())
 
   return <TodayOpeningCard opening={opening || cachedOpening} />
