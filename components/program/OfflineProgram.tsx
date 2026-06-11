@@ -12,11 +12,7 @@ function getTodayKey() {
   return `${year}-${month}-${day}`
 }
 
-export default function OfflineProgram({
-  showTimes,
-}: {
-  showTimes: any[]
-}) {
+export default function OfflineProgram({ showTimes }: { showTimes: any[] }) {
   const data = useOfflineData("shows", showTimes)
   const today = getTodayKey()
 
@@ -29,8 +25,8 @@ export default function OfflineProgram({
   return (
     <div className="space-y-3 px-4 pb-6">
       {todayShowTimes.length === 0 ? (
-        <p className="rounded-3xl bg-white p-4 text-gray-500 shadow-sm">
-          Aucun spectacle aujourd’hui.
+        <p className="rounded-2xl bg-white p-4 text-sm font-semibold text-slate-500 shadow-sm">
+          Aucun spectacle aujourd'hui.
         </p>
       ) : (
         todayShowTimes.map((showTime: any) => (

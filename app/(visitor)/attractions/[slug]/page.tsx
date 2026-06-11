@@ -1,37 +1,40 @@
 export const dynamic = "force-dynamic"
 
+import Link from "next/link"
+import { notFound } from "next/navigation"
+import Badge from "@/components/ui/Badge"
+import Card from "@/components/ui/Card"
+import SectionTitle from "@/components/ui/SectionTitle"
 import { getAttractionBySlug } from "@/lib/attractions"
 import {
-  getTodayOpening,
   getAttractionVisitorStatus,
+  getTodayOpening,
 } from "@/lib/opening-hours"
-import { notFound } from "next/navigation"
-import Link from "next/link"
 
 function getStatusLabel(status: string) {
   if (status === "open") return "Ouverte actuellement"
   if (status === "maintenance") return "En maintenance"
-  return "Fermée actuellement"
+  return "Fermee actuellement"
 }
 
-function getStatusStyle(status: string) {
-  if (status === "open") return "bg-green-100 text-green-700"
-  if (status === "maintenance") return "bg-orange-100 text-orange-700"
-  return "bg-red-100 text-red-700"
+function getStatusTone(status: string) {
+  if (status === "open") return "green"
+  if (status === "maintenance") return "orange"
+  return "red"
 }
 
 function getThrillLabel(level?: number) {
   switch (level) {
     case 1:
-      return "Très doux"
+      return "Tres doux"
     case 2:
       return "Doux"
     case 3:
-      return "Modéré"
+      return "Modere"
     case 4:
       return "Sensations fortes"
     case 5:
-      return "Extrême"
+      return "Extreme"
     default:
       return null
   }
@@ -43,7 +46,7 @@ function Stars({ level }: { level?: number }) {
   return (
     <div className="text-lg text-yellow-500">
       {"★".repeat(level)}
-      <span className="text-gray-300">{"★".repeat(5 - level)}</span>
+      <span className="text-slate-300">{"★".repeat(5 - level)}</span>
     </div>
   )
 }
@@ -64,8 +67,8 @@ export default async function AttractionPage({
   if (visitorStatus === "hidden") return notFound()
 
   return (
-    <main className="min-h-screen bg-gray-100 pb-6">
-      <div className="relative h-56 bg-gray-300">
+    <main className="min-h-screen bg-slate-100 pb-6">
+      <div className="relative h-64 bg-slate-300">
         {attraction.image_url ? (
           <img
             src={attraction.image_url}
@@ -73,111 +76,88 @@ export default async function AttractionPage({
             className="h-full w-full object-cover"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-6xl">
-            🎢
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-pink-100 to-yellow-100 text-sm font-black uppercase text-pink-700">
+            Attraction
           </div>
         )}
 
         <Link
           href="/attractions"
-          className="absolute left-4 top-4 z-50 flex h-11 items-center rounded-full bg-white px-4 text-sm font-bold text-gray-900 shadow-lg active:scale-95"
+          className="absolute left-4 top-4 z-50 flex h-11 items-center rounded-full bg-white px-4 text-sm font-black text-slate-950 shadow-lg active:scale-95"
         >
-          ◀ Attractions
+          Attractions
         </Link>
 
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-5 pt-20">
-          <span
-            className={`inline-block rounded-full px-3 py-1 text-xs font-bold ${getStatusStyle(
-              visitorStatus
-            )}`}
-          >
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/90 to-transparent p-5 pt-24">
+          <Badge tone={getStatusTone(visitorStatus)}>
             {getStatusLabel(visitorStatus)}
-          </span>
+          </Badge>
 
-          <h1 className="mt-3 text-3xl font-black text-white drop-shadow">
+          <h1 className="mt-3 text-3xl font-black leading-tight text-white drop-shadow">
             {attraction.name}
           </h1>
 
           {attraction.park_areas?.name && (
-            <p className="mt-1 text-sm font-semibold text-white/80">
-              📍 {attraction.park_areas.name}
+            <p className="mt-1 text-sm font-bold text-white/80">
+              {attraction.park_areas.name}
             </p>
           )}
         </div>
       </div>
 
-      <section className="-mt-6 rounded-t-[2rem] bg-white p-5 shadow-lg">
-        {attraction.short_description && (
-          <p className="text-lg font-bold text-gray-900">
-            {attraction.short_description}
-          </p>
-        )}
-
-        {attraction.description && (
-          <p className="mt-4 whitespace-pre-line text-gray-700">
-            {attraction.description}
-          </p>
-        )}
-
-        <div className="mt-5 grid grid-cols-2 gap-3">
-          {attraction.ride_type && (
-            <InfoBadge icon="🎢" label={attraction.ride_type} />
+      <section className="-mt-5 space-y-4 px-4">
+        <Card className="p-5">
+          {attraction.short_description && (
+            <p className="text-lg font-black leading-6 text-slate-950">
+              {attraction.short_description}
+            </p>
           )}
 
-          {attraction.opening_year && (
-            <InfoBadge icon="📅" label={`Depuis ${attraction.opening_year}`} />
+          {attraction.description && (
+            <p className="mt-4 whitespace-pre-line text-sm font-medium leading-6 text-slate-600">
+              {attraction.description}
+            </p>
           )}
+        </Card>
 
-          {attraction.manufacturer && (
-            <InfoBadge icon="🏭" label={attraction.manufacturer} />
-          )}
-
-          {attraction.ride_duration && (
-            <InfoBadge icon="⏱️" label={attraction.ride_duration} />
-          )}
-
-          {attraction.min_height && (
-            <InfoBadge
-              icon="📏"
-              label={`Accompagné dès ${attraction.min_height} cm`}
-            />
-          )}
-
-          {attraction.accompanied_height && (
-            <InfoBadge
-              icon="✅"
-              label={`Seul dès ${attraction.accompanied_height} cm`}
-            />
-          )}
-
-          {attraction.is_family && (
-            <InfoBadge icon="👨‍👩‍👧‍👦" label="Familiale" />
-          )}
-
-          {attraction.is_kids && (
-            <InfoBadge icon="🧒" label="Enfants" />
-          )}
-
-          {attraction.is_accessible_pmr && (
-            <InfoBadge icon="♿" label="Accessible PMR" />
-          )}
-        </div>
+        <Card className="p-5">
+          <SectionTitle title="A savoir" />
+          <div className="grid grid-cols-2 gap-3">
+            {attraction.ride_type && <InfoBadge label={attraction.ride_type} />}
+            {attraction.opening_year && (
+              <InfoBadge label={`Depuis ${attraction.opening_year}`} />
+            )}
+            {attraction.manufacturer && (
+              <InfoBadge label={attraction.manufacturer} />
+            )}
+            {attraction.ride_duration && (
+              <InfoBadge label={attraction.ride_duration} />
+            )}
+            {attraction.min_height && (
+              <InfoBadge label={`Accompagne des ${attraction.min_height} cm`} />
+            )}
+            {attraction.accompanied_height && (
+              <InfoBadge label={`Seul des ${attraction.accompanied_height} cm`} />
+            )}
+            {attraction.is_family && <InfoBadge label="Familiale" />}
+            {attraction.is_kids && <InfoBadge label="Enfants" />}
+            {attraction.is_accessible_pmr && <InfoBadge label="Accessible PMR" />}
+          </div>
+        </Card>
 
         {attraction.thrill_level && (
-          <div className="mt-5 rounded-3xl bg-gray-100 p-4">
-            <p className="text-sm font-bold text-gray-500">
-              Niveau de sensations
-            </p>
+          <Card className="p-5">
+            <SectionTitle title="Niveau de sensations" />
             <Stars level={Number(attraction.thrill_level)} />
-            <p className="mt-1 text-sm font-semibold text-gray-700">
+            <p className="mt-1 text-sm font-semibold text-slate-700">
               {getThrillLabel(Number(attraction.thrill_level))}
             </p>
-          </div>
+          </Card>
         )}
 
         {attraction.location_hint && (
-          <div className="mt-5 rounded-3xl bg-blue-50 p-4 text-sm font-semibold text-blue-700">
-            📍 {attraction.location_hint}
+          <div className="rounded-2xl bg-blue-50 p-4 text-sm font-bold text-blue-700">
+            {attraction.location_hint}
           </div>
         )}
       </section>
@@ -185,10 +165,9 @@ export default async function AttractionPage({
   )
 }
 
-function InfoBadge({ icon, label }: { icon: string; label: string }) {
+function InfoBadge({ label }: { label: string }) {
   return (
-    <div className="rounded-2xl bg-gray-100 px-4 py-3 text-sm font-semibold text-gray-700">
-      <span className="mr-1">{icon}</span>
+    <div className="rounded-2xl bg-slate-100 px-4 py-3 text-sm font-bold leading-tight text-slate-700">
       {label}
     </div>
   )

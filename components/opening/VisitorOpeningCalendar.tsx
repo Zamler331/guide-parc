@@ -1,20 +1,22 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import Card from "@/components/ui/Card"
+import SectionTitle from "@/components/ui/SectionTitle"
 
 const MONTHS = [
   "Janvier",
-  "Février",
+  "Fevrier",
   "Mars",
   "Avril",
   "Mai",
   "Juin",
   "Juillet",
-  "Août",
+  "Aout",
   "Septembre",
   "Octobre",
   "Novembre",
-  "Décembre",
+  "Decembre",
 ]
 
 const WEEK_DAYS = ["L", "M", "M", "J", "V", "S", "D"]
@@ -67,32 +69,30 @@ export default function VisitorOpeningCalendar({
   const offset = getMondayFirstOffset(days[0])
 
   return (
-    <div className="rounded-3xl bg-white p-5 shadow-sm">
-      <div className="mb-4 flex items-center justify-between">
+    <Card className="p-5">
+      <div className="mb-4 flex items-center justify-between gap-3">
         <button
-          onClick={() =>
-            setMonth((value) => (value === 0 ? 11 : value - 1))
-          }
-          className="rounded-xl bg-gray-100 px-3 py-2"
+          onClick={() => setMonth((value) => (value === 0 ? 11 : value - 1))}
+          className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-lg font-black text-slate-700 active:scale-95"
+          aria-label="Mois precedent"
         >
-          ←
+          {"<"}
         </button>
 
-        <h2 className="text-xl font-black">
+        <h2 className="text-center text-xl font-black leading-tight text-slate-950">
           {MONTHS[month]} {year}
         </h2>
 
         <button
-          onClick={() =>
-            setMonth((value) => (value === 11 ? 0 : value + 1))
-          }
-          className="rounded-xl bg-gray-100 px-3 py-2"
+          onClick={() => setMonth((value) => (value === 11 ? 0 : value + 1))}
+          className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-lg font-black text-slate-700 active:scale-95"
+          aria-label="Mois suivant"
         >
-          →
+          {">"}
         </button>
       </div>
 
-      <div className="grid grid-cols-7 gap-1 text-center text-xs font-bold text-gray-400">
+      <div className="grid grid-cols-7 gap-1 text-center text-xs font-black text-slate-400">
         {WEEK_DAYS.map((day, index) => (
           <div key={`${day}-${index}`}>{day}</div>
         ))}
@@ -111,14 +111,14 @@ export default function VisitorOpeningCalendar({
           return (
             <div
               key={dateKey}
-              className="flex aspect-square items-center justify-center rounded-lg text-xs font-bold"
+              className="flex aspect-square items-center justify-center rounded-xl border border-slate-100 text-xs font-black text-slate-900"
               style={{
                 backgroundColor: schedule?.color || "#ffffff",
               }}
               title={
                 schedule
                   ? `${schedule.name}${openingDay?.note ? ` - ${openingDay.note}` : ""}`
-                  : "Non configuré"
+                  : "Non configure"
               }
             >
               {date.getDate()}
@@ -128,9 +128,9 @@ export default function VisitorOpeningCalendar({
       </div>
 
       <div className="mt-6">
-        <h3 className="font-bold">Légende</h3>
+        <SectionTitle title="Legende" />
 
-        <div className="mt-3 flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-3">
           {Array.from(
             new Map(
               openingDays
@@ -140,18 +140,17 @@ export default function VisitorOpeningCalendar({
           ).map((schedule: any) => (
             <div
               key={schedule.id}
-              className="flex items-center gap-2 text-sm"
+              className="flex items-center gap-2 rounded-full bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700"
             >
               <span
-                className="h-4 w-4 rounded-full border"
+                className="h-4 w-4 rounded-full border border-slate-200"
                 style={{ backgroundColor: schedule.color }}
               />
-
               <span>{schedule.name}</span>
             </div>
           ))}
         </div>
       </div>
-    </div>
+    </Card>
   )
 }

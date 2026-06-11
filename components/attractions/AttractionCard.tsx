@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Badge from "@/components/ui/Badge"
 import { getAttractionVisitorStatus } from "@/lib/opening-hours"
 
 type Attraction = {
@@ -16,24 +17,24 @@ function getStatusLabel(status?: string) {
     case "maintenance":
       return "Maintenance"
     case "hidden":
-      return "Masquée"
+      return "Masquee"
     case "open":
-      return "Ouverte actuellement"
+      return "Ouverte"
     default:
-      return "Fermée actuellement"
+      return "Fermee"
   }
 }
 
-function getStatusStyle(status?: string) {
+function getStatusTone(status?: string) {
   switch (status) {
     case "maintenance":
-      return "bg-orange-100 text-orange-700"
+      return "orange"
     case "hidden":
-      return "bg-gray-100 text-gray-600"
+      return "gray"
     case "open":
-      return "bg-green-100 text-green-700"
+      return "green"
     default:
-      return "bg-red-100 text-red-700"
+      return "red"
   }
 }
 
@@ -53,9 +54,9 @@ export default function AttractionCard({
   return (
     <Link
       href={`/attractions/${attraction.slug}`}
-      className="group block overflow-hidden rounded-3xl bg-white shadow-sm transition active:scale-[0.98]"
+      className="group block overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition active:scale-[0.98]"
     >
-      <div className="relative h-44 bg-gray-100">
+      <div className="relative h-44 bg-slate-200">
         {attraction.image_url ? (
           <img
             src={attraction.image_url}
@@ -63,42 +64,39 @@ export default function AttractionCard({
             className="h-full w-full object-cover transition group-active:scale-105"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-5xl">
-            🎢
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-pink-100 to-yellow-100 text-sm font-black uppercase text-pink-700">
+            Attraction
           </div>
         )}
 
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-4 pt-12">
-          <h2 className="text-xl font-black text-white drop-shadow">
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/85 to-transparent p-4 pt-12">
+          <h2 className="text-xl font-black leading-tight text-white drop-shadow">
             {attraction.name}
           </h2>
         </div>
 
-        <span
-          className={`absolute left-3 top-3 rounded-full px-3 py-1 text-xs font-bold ${getStatusStyle(
-            visitorStatus
-          )}`}
+        <Badge
+          tone={getStatusTone(visitorStatus)}
+          className="absolute left-3 top-3 shadow-sm"
         >
           {getStatusLabel(visitorStatus)}
-        </span>
+        </Badge>
       </div>
 
       <div className="p-4">
         {attraction.park_areas?.name && (
-          <p className="text-xs font-bold uppercase tracking-wide text-gray-400">
-            📍 {attraction.park_areas.name}
+          <p className="text-xs font-black uppercase text-slate-400">
+            {attraction.park_areas.name}
           </p>
         )}
 
         {attraction.short_description && (
-          <p className="mt-2 line-clamp-2 text-sm text-gray-600">
+          <p className="mt-2 line-clamp-2 text-sm font-medium leading-5 text-slate-600">
             {attraction.short_description}
           </p>
         )}
 
-        <p className="mt-3 text-sm font-black text-gray-900">
-          Découvrir →
-        </p>
+        <p className="mt-3 text-sm font-black text-slate-950">Decouvrir</p>
       </div>
     </Link>
   )
