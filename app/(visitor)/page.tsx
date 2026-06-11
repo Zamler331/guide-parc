@@ -1,11 +1,9 @@
-import Link from "next/link"
 import { getTodayOpening } from "@/lib/opening-hours"
 import TodayOpeningCard from "@/components/opening/TodayOpeningCard"
 
 export default async function HomePage() {
 
   const opening = await getTodayOpening()
-  console.log("OPENING TODAY:", opening)
 
   return (
     <main className="h-screen overflow-hidden bg-blue-700 text-white">
@@ -92,12 +90,12 @@ function HomeButton({
   label: string
 }) {
   return (
-    <Link
-      href={href}
+    <a
+     href={href}
       className={`${color} ${shadow} flex min-h-24 flex-col items-center justify-center rounded-3xl p-3 text-center font-black text-white shadow-xl transition active:scale-95`}
-    >
+>
       <span className="text-3xl drop-shadow">{icon}</span>
       <span className="mt-2 text-sm leading-tight drop-shadow">{label}</span>
-    </Link>
+    </a>
   )
 }
