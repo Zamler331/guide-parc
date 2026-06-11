@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { saveToCache } from "@/lib/offline-cache"
-import { saveMapImageOffline } from "@/lib/offline-map-image"
+import { saveLocalImagesOffline } from "@/lib/offline-map-image"
 import { saveOfflinePage } from "@/lib/offline-pages"
 
 export default function OfflineSync() {
@@ -23,7 +23,7 @@ export default function OfflineSync() {
           fetch("/map.png", { cache: "reload" }),
         ])
 
-        await saveMapImageOffline()
+        await saveLocalImagesOffline()
 
         const [attractions, mapPoints, infos, shows, alerts] =
           await Promise.all([

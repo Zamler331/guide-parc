@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import InteractiveMap from "./InteractiveMap"
 import { useOfflineData } from "@/hooks/useOfflineData"
-import { readMapImageOffline } from "@/lib/offline-map-image"
+import { readImageOffline } from "@/lib/offline-map-image"
 
 export default function OfflineMap({ points }: { points: any[] }) {
   const data = useOfflineData("map_points", points)
@@ -11,7 +11,7 @@ export default function OfflineMap({ points }: { points: any[] }) {
 
   useEffect(() => {
     if (!navigator.onLine) {
-      const cached = readMapImageOffline()
+      const cached = readImageOffline("offline_map_image")
       if (cached) setMapSrc(cached)
     }
   }, [])
