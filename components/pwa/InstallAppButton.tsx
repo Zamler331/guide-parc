@@ -17,32 +17,47 @@ function isStandalone() {
 
 function isIosSafari() {
   const ua = window.navigator.userAgent.toLowerCase()
-  const isIos = /iphone|ipad|ipod/.test(ua)
-  const isSafari = /safari/.test(ua) && !/crios|fxios|edgios/.test(ua)
+  return /iphone|ipad|ipod/.test(ua)
+}
 
-  return isIos && isSafari
+function isAndroid() {
+  return /android/.test(window.navigator.userAgent.toLowerCase())
+}
+
+function getUnsupportedMessage() {
+  if (isAndroid()) {
+    return "Votre navigateur ne propose pas encore l'installation. Essayez avec Chrome sur Android."
+  }
+
+  return "Votre navigateur ne propose pas l'installation directe. Vous pouvez garder ce guide en favori."
 }
 
 export default function InstallAppButton() {
   const [installPrompt, setInstallPrompt] =
     useState<BeforeInstallPromptEvent | null>(null)
   const [showIosHelp, setShowIosHelp] = useState(false)
+  const [showUnsupportedHelp, setShowUnsupportedHelp] = useState(false)
   const [installed, setInstalled] = useState(false)
 
   useEffect(() => {
     setInstalled(isStandalone())
-    setShowIosHelp(isIosSafari() && !isStandalone())
+    const shouldShowIosHelp = isIosSafari() && !isStandalone()
+
+    setShowIosHelp(shouldShowIosHelp)
+    setShowUnsupportedHelp(!shouldShowIosHelp && !isStandalone())
 
     function handleBeforeInstallPrompt(event: Event) {
       event.preventDefault()
       setInstallPrompt(event as BeforeInstallPromptEvent)
       setShowIosHelp(false)
+      setShowUnsupportedHelp(false)
     }
 
     function handleInstalled() {
       setInstalled(true)
       setInstallPrompt(null)
       setShowIosHelp(false)
+      setShowUnsupportedHelp(false)
     }
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt)
@@ -68,7 +83,7 @@ export default function InstallAppButton() {
   }
 
   if (installed) return null
-  if (!installPrompt && !showIosHelp) return null
+  if (!installPrompt && !showIosHelp && !showUnsupportedHelp) return null
 
   return (
     <div className="relative z-20 w-full rounded-2xl border border-white/25 bg-white/15 p-3 text-left shadow-lg backdrop-blur">
@@ -80,11 +95,18 @@ export default function InstallAppButton() {
         >
           Installer l'application
         </button>
-      ) : (
+      ) : showIosHelp ? (
         <div className="text-sm font-bold leading-5 text-white">
           <p>Installer l'application</p>
           <p className="mt-1 text-xs font-semibold text-blue-50/85">
             Sur iPhone, touchez Partager puis Ajouter a l'ecran d'accueil.
+          </p>
+        </div>
+      ) : (
+        <div className="text-sm font-bold leading-5 text-white">
+          <p>Installer l'application</p>
+          <p className="mt-1 text-xs font-semibold text-blue-50/85">
+            {getUnsupportedMessage()}
           </p>
         </div>
       )}
