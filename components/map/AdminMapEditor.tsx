@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { supabase } from "@/lib/supabase"
+import { createSupabaseAuthClient } from "@/lib/supabase-auth-client"
 import { useRouter } from "next/navigation"
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch"
 import { uploadImage } from "@/lib/storage"
@@ -20,6 +20,10 @@ function getTypeColor(type: string) {
   return TYPES.find((item) => item.value === type)?.color || "bg-gray-500"
 }
 
+function getSupabaseErrorMessage(error: any) {
+  return error?.message || error?.details || "Erreur inconnue"
+}
+
 export default function AdminMapEditor({
   points,
   attractions,
@@ -30,6 +34,7 @@ export default function AdminMapEditor({
   areas: any[]
 }) {
   const router = useRouter()
+  const supabase = createSupabaseAuthClient()
   const [areaId, setAreaId] = useState("")
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [x, setX] = useState<number | null>(null)
@@ -171,7 +176,7 @@ export default function AdminMapEditor({
     setLoading(false)
 
     if (error) {
-      alert("Erreur lors de l’enregistrement du point")
+      alert(`Erreur lors de l'enregistrement du point : ${getSupabaseErrorMessage(error)}`)
       console.error(error)
       return
     }

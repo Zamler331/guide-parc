@@ -1,47 +1,82 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import Link from "next/link"
-import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch"
+import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch"
 
 const TYPES = [
-  { value: "all", label: "Tous", icon: "✨" },
-  { value: "attraction", label: "Attractions", icon: "🎢" },
-  { value: "restaurant", label: "Restauration", icon: "🍔" },
-  { value: "shop", label: "Boutiques", icon: "🛍️" },
-  { value: "toilet", label: "Toilettes", icon: "🚻" },
-  { value: "first_aid", label: "Secours", icon: "🩺" },
-  { value: "parking", label: "Parking", icon: "🅿️" },
-  { value: "show", label: "Spectacles", icon: "🎭" },
+  { value: "all", label: "Tous", shortLabel: "Tous" },
+  { value: "attraction", label: "Attractions", shortLabel: "Attr." },
+  { value: "restaurant", label: "Restauration", shortLabel: "Food" },
+  { value: "shop", label: "Boutiques", shortLabel: "Shop" },
+  { value: "toilet", label: "Toilettes", shortLabel: "WC" },
+  { value: "first_aid", label: "Secours", shortLabel: "SOS" },
+  { value: "parking", label: "Parking", shortLabel: "P" },
+  { value: "show", label: "Spectacles", shortLabel: "Show" },
 ]
+
+const ATTRACTION_ICON_SRC = "/attraction-map-icon.png"
 
 function getType(type: string) {
   return TYPES.find((item) => item.value === type) || TYPES[0]
 }
 
-function getColor(type: string) {
+function getTypeStyle(type: string) {
   switch (type) {
     case "attraction":
-      return "border-red-500 text-red-600"
+      return "bg-red-500 text-white"
     case "restaurant":
-      return "border-orange-500 text-orange-600"
+      return "bg-orange-500 text-white"
     case "shop":
-      return "border-purple-500 text-purple-600"
+      return "bg-purple-500 text-white"
     case "toilet":
-      return "border-blue-500 text-blue-600"
+      return "bg-blue-500 text-white"
     case "first_aid":
-      return "border-green-500 text-green-600"
+      return "bg-green-600 text-white"
     case "parking":
-      return "border-gray-700 text-gray-700"
+      return "bg-slate-800 text-white"
     case "show":
-      return "border-pink-500 text-pink-600"
+      return "bg-pink-500 text-white"
     default:
-      return "border-gray-400 text-gray-600"
+      return "bg-white text-slate-700"
   }
 }
 
 function getPointLink(point: any) {
+  if (point.type === "attraction" && point.attraction?.slug) {
+    return `/attractions/${point.attraction.slug}`
+  }
+
   return point.target_url || "/carte"
+}
+
+function getPointName(point: any) {
+  return point.type === "attraction"
+    ? point.attraction?.name || point.name
+    : point.name
+}
+
+function getPointImage(point: any) {
+  return point.type === "attraction"
+    ? point.attraction?.image_url || point.image_url
+    : point.image_url
+}
+
+function getPointDescription(point: any) {
+  return point.type === "attraction"
+    ? point.attraction?.short_description || point.short_description
+    : point.short_description
+}
+
+function AttractionMarkerIcon() {
+  return (
+    <img
+      src={ATTRACTION_ICON_SRC}
+      alt=""
+      className="h-6 w-6 object-contain"
+      draggable={false}
+    />
+  )
 }
 
 function getZoneClusters(points: any[]) {
@@ -51,14 +86,12 @@ function getZoneClusters(points: any[]) {
     const key = point.area_id || "no-area"
 
     if (!groups[key]) groups[key] = []
-
     groups[key].push(point)
   })
 
   return Object.entries(groups).map(([areaId, items]) => {
     const avgX =
       items.reduce((sum, point) => sum + Number(point.x), 0) / items.length
-
     const avgY =
       items.reduce((sum, point) => sum + Number(point.y), 0) / items.length
 
@@ -81,18 +114,25 @@ export default function InteractiveMap({
 }) {
   const [filter, setFilter] = useState("all")
   const [selectedPoint, setSelectedPoint] = useState<any | null>(null)
-  const [scale, setScale] = useState(1)
+  const [scale, setScale] = useState(1.2)
 
-  const filteredPoints =
-    filter === "all" ? points : points.filter((point) => point.type === filter)
+  const filteredPoints = useMemo(() => {
+    return filter === "all"
+      ? points
+      : points.filter((point) => point.type === filter)
+  }, [filter, points])
 
-  const showClusters = scale < 1.6 && filter === "all"
-  const clusters = getZoneClusters(filteredPoints)
+  const clusters = useMemo(
+    () => getZoneClusters(filteredPoints),
+    [filteredPoints]
+  )
+
+  const showClusters = scale < 1.75 && filter === "all"
 
   return (
     <div className="relative h-[calc(100vh-64px)] overflow-hidden bg-[#a3a463]">
-      <div className="absolute left-0 right-0 top-0 z-30 bg-white/90 px-3 py-3 backdrop-blur">
-        <div className="flex gap-2 overflow-x-auto">
+      <div className="absolute left-0 right-0 top-0 z-30 border-b border-white/50 bg-white/90 px-3 py-3 shadow-sm backdrop-blur">
+        <div className="flex gap-2 overflow-x-auto pb-1">
           {TYPES.map((type) => {
             const active = filter === type.value
 
@@ -104,13 +144,13 @@ export default function InteractiveMap({
                   setFilter(type.value)
                   setSelectedPoint(null)
                 }}
-                className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-sm font-semibold ${
+                className={`min-h-9 whitespace-nowrap rounded-full border px-3 text-sm font-black transition active:scale-95 ${
                   active
-                    ? "border-gray-900 bg-gray-900 text-white"
-                    : "border-gray-200 bg-white text-gray-600"
+                    ? "border-slate-950 bg-slate-950 text-white"
+                    : "border-slate-200 bg-white text-slate-600"
                 }`}
               >
-                {type.icon} {type.label}
+                {type.label}
               </button>
             )
           })}
@@ -122,39 +162,44 @@ export default function InteractiveMap({
         minScale={1}
         maxScale={7}
         centerOnInit
-        limitToBounds={true}
-        wheel={{ step: 0.15 }}
-        pinch={{ step: 5 }}
+        limitToBounds
+        wheel={{ step: 0.12 }}
+        pinch={{ step: 4 }}
         doubleClick={{ disabled: true }}
-        panning={{ velocityDisabled: true }}
+        panning={{ velocityDisabled: false }}
         onZoom={(ref: any) => setScale(ref.state.scale)}
-        onPanning={(ref: any) => setScale(ref.state.scale)}
       >
         {({ zoomIn, zoomOut, resetTransform, zoomToElement }: any) => (
           <>
             <div className="absolute bottom-28 right-3 z-30 flex flex-col gap-2">
               <button
                 type="button"
-                onClick={() => zoomIn()}
-                className="h-10 w-10 rounded-full bg-white text-lg font-black shadow"
+                onClick={() => zoomIn(0.55)}
+                className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-xl font-black text-slate-950 shadow-lg active:scale-95"
+                aria-label="Zoomer"
               >
                 +
               </button>
 
               <button
                 type="button"
-                onClick={() => zoomOut()}
-                className="h-10 w-10 rounded-full bg-white text-lg font-black shadow"
+                onClick={() => zoomOut(0.55)}
+                className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-xl font-black text-slate-950 shadow-lg active:scale-95"
+                aria-label="Dezoomer"
               >
                 -
               </button>
 
               <button
                 type="button"
-                onClick={() => resetTransform()}
-                className="rounded-full bg-white px-3 py-2 text-xs font-bold shadow"
+                onClick={() => {
+                  setSelectedPoint(null)
+                  setScale(1.2)
+                  resetTransform()
+                }}
+                className="rounded-full bg-white px-3 py-2 text-xs font-black text-slate-950 shadow-lg active:scale-95"
               >
-                Reset
+                Recentrer
               </button>
             </div>
 
@@ -162,7 +207,7 @@ export default function InteractiveMap({
               wrapperClass="!h-full !w-full !bg-[#a3a463]"
               contentClass="!w-auto !h-auto !bg-[#a3a463]"
             >
-              <div className="relative mt-16 w-[1100px] max-w-none">
+              <div className="relative mt-16 w-[1100px] max-w-none touch-none">
                 <img
                   src={mapSrc}
                   alt="Plan du parc"
@@ -186,11 +231,8 @@ export default function InteractiveMap({
                             setSelectedPoint(null)
 
                             if (zoomToElement) {
-                              zoomToElement(clusterId, 2.8, 500)
-
-                              setTimeout(() => {
-                                setScale(2.8)
-                              }, 550)
+                              zoomToElement(clusterId, 2.9, 420)
+                              setScale(2.9)
                             }
                           }}
                           className="absolute"
@@ -203,12 +245,14 @@ export default function InteractiveMap({
                           title={areaName}
                         >
                           <span
-                          className="flex items-center gap-1 rounded-full border-1 border-white px-2 py-1 text-[10px] font-black text-white shadow-lg"
-                          style={{ backgroundColor: areaColor }}
-                        >
-                          <span>📍</span>
-                          <span>{areaName}</span>
-                        </span>
+                            className="flex min-h-10 items-center gap-2 rounded-full border-2 border-white px-3 py-2 text-xs font-black text-white shadow-xl"
+                            style={{ backgroundColor: areaColor }}
+                          >
+                            <span>{areaName}</span>
+                            <span className="rounded-full bg-white/20 px-2 py-0.5">
+                              {cluster.count}
+                            </span>
+                          </span>
                         </button>
                       )
                     })
@@ -231,19 +275,28 @@ export default function InteractiveMap({
                             transform: `translate(-50%, -50%) scale(${1 / scale})`,
                             transformOrigin: "center",
                           }}
-                          aria-label={point.name}
+                          aria-label={getPointName(point)}
                         >
                           <span
-                            className={`flex h-9 w-9 items-center justify-center rounded-full border-2 text-sm shadow-lg ${
-                              selected ? "ring-4 ring-white" : ""
-                            }`}
+                            className={`flex h-9 min-w-9 items-center justify-center rounded-full border-2 border-white px-2 text-[9px] font-black shadow-lg transition ${
+                              getTypeStyle(point.type)
+                            } ${selected ? "ring-4 ring-white" : ""}`}
                             style={{
-                              backgroundColor: point.area?.color || "#ffffff",
-                              borderColor: "white",
-                              color: "white",
+                              backgroundColor:
+                                point.type === "attraction"
+                                  ? "#ffffff"
+                                  : point.area?.color || undefined,
+                              borderColor:
+                                point.type === "attraction"
+                                  ? point.area?.color || "#ffffff"
+                                  : "#ffffff",
                             }}
                           >
-                            {type.icon}
+                            {point.type === "attraction" ? (
+                              <AttractionMarkerIcon />
+                            ) : (
+                              type.shortLabel
+                            )}
                           </span>
                         </button>
                       )
@@ -258,46 +311,54 @@ export default function InteractiveMap({
         <div className="absolute bottom-3 left-3 right-3 z-40">
           <Link
             href={getPointLink(selectedPoint)}
-            className="block rounded-3xl bg-white p-3 shadow-2xl"
+            className="block rounded-2xl border border-slate-100 bg-white p-3 shadow-2xl active:scale-[0.99]"
           >
             <div className="flex gap-3">
-              <div className="h-20 w-24 shrink-0 overflow-hidden rounded-2xl bg-gray-100">
-                {selectedPoint.image_url ? (
+              <div className="h-20 w-24 shrink-0 overflow-hidden rounded-2xl bg-slate-100">
+                {getPointImage(selectedPoint) ? (
                   <img
-                    src={selectedPoint.image_url}
-                    alt={selectedPoint.name}
+                    src={getPointImage(selectedPoint)}
+                    alt={getPointName(selectedPoint)}
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center text-3xl">
-                    {getType(selectedPoint.type).icon}
+                  <div
+                    className={`flex h-full w-full items-center justify-center text-xs font-black uppercase ${getTypeStyle(
+                      selectedPoint.type
+                    )}`}
+                  >
+                    {selectedPoint.type === "attraction" ? (
+                      <AttractionMarkerIcon />
+                    ) : (
+                      getType(selectedPoint.type).shortLabel
+                    )}
                   </div>
                 )}
               </div>
 
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold uppercase tracking-wide text-gray-400">
+                <p className="text-xs font-black uppercase text-slate-400">
                   {getType(selectedPoint.type).label}
                 </p>
 
-                <h2 className="mt-1 truncate text-lg font-black text-gray-900">
-                  {selectedPoint.name}
+                <h2 className="mt-1 truncate text-lg font-black text-slate-950">
+                  {getPointName(selectedPoint)}
                 </h2>
 
                 {selectedPoint.area?.name && (
-                  <p className="mt-1 text-xs font-semibold text-gray-500">
-                    📍 {selectedPoint.area.name}
+                  <p className="mt-1 text-xs font-bold text-slate-500">
+                    {selectedPoint.area.name}
                   </p>
                 )}
 
-                {selectedPoint.short_description && (
-                  <p className="mt-1 line-clamp-2 text-sm text-gray-600">
-                    {selectedPoint.short_description}
+                {getPointDescription(selectedPoint) && (
+                  <p className="mt-1 line-clamp-2 text-sm font-medium text-slate-600">
+                    {getPointDescription(selectedPoint)}
                   </p>
                 )}
 
-                <p className="mt-2 text-xs font-bold text-gray-400">
-                  Toucher pour ouvrir →
+                <p className="mt-2 text-xs font-black text-slate-400">
+                  Toucher pour ouvrir
                 </p>
               </div>
             </div>

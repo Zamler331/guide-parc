@@ -1,12 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { supabase } from "@/lib/supabase"
+import { createSupabaseAuthClient } from "@/lib/supabase-auth-client"
 import { uploadImage } from "@/lib/storage"
 import { useRouter } from "next/navigation"
 
 export default function AttractionForm({ areas }: { areas: any[] }) {
   const router = useRouter()
+  const supabase = createSupabaseAuthClient()
 
   const [name, setName] = useState("")
   const [slug, setSlug] = useState("")

@@ -18,6 +18,26 @@ function getTodayKey() {
   return `${year}-${month}-${day}`
 }
 
+function getAttractionSlugFromTargetUrl(targetUrl?: string | null) {
+  const match = targetUrl?.match(/^\/attractions\/([^/?#]+)/)
+  return match ? decodeURIComponent(match[1]) : null
+}
+
+function attachAttractionsToMapPoints(mapPoints: any[], attractions: any[]) {
+  const attractionsBySlug = new Map(
+    attractions.map((attraction) => [attraction.slug, attraction])
+  )
+
+  return mapPoints.map((point) => {
+    if (point.attraction) return point
+
+    const slug = getAttractionSlugFromTargetUrl(point.target_url)
+    const attraction = slug ? attractionsBySlug.get(slug) : null
+
+    return attraction ? { ...point, attraction } : point
+  })
+}
+
 export default function OfflineSync() {
   const [status, setStatus] = useState("Preparation du guide...")
 
@@ -87,6 +107,10 @@ export default function OfflineSync() {
 
         const attractionsData = attractions.data || []
         const openingDaysData = openingDays.data || []
+        const mapPointsData = attachAttractionsToMapPoints(
+          mapPoints.data || [],
+          attractionsData
+        )
 
         const showTimesData = (shows.data || []).filter(
           (time: any) => time.show?.status === "active"
@@ -122,7 +146,7 @@ export default function OfflineSync() {
         ])
 
         saveToCache("attractions", attractionsData)
-        saveToCache("map_points", mapPoints.data || [])
+        saveToCache("map_points", mapPointsData)
         saveToCache("practical_infos", infos.data || [])
         saveToCache("shows", showTimesData)
         saveToCache("alerts", alerts.data || [])

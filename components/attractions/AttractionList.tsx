@@ -1,5 +1,4 @@
 import AttractionCard from "./AttractionCard"
-import SectionTitle from "@/components/ui/SectionTitle"
 
 export default function AttractionList({
   attractions,
@@ -21,7 +20,17 @@ export default function AttractionList({
     <div className="space-y-6 px-4 pb-6">
       {Object.entries(grouped).map(([zoneName, items]: any) => (
         <section key={zoneName}>
-          <SectionTitle title={zoneName} />
+          <div className="mb-3 rounded-2xl border border-white/80 bg-gradient-to-r from-blue-600 to-emerald-500 px-4 py-3 text-white shadow-sm">
+            <p className="text-[11px] font-black uppercase text-white/75">
+              Zone du parc
+            </p>
+            <h2 className="text-2xl font-black leading-tight">
+              {zoneName}
+            </h2>
+            <p className="mt-1 text-xs font-bold text-white/80">
+              {items.length} attraction{items.length > 1 ? "s" : ""}
+            </p>
+          </div>
 
           <div className="grid gap-4">
             {items.map((attraction: any) => (

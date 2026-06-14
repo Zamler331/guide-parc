@@ -1,9 +1,35 @@
 "use client"
 
 import { useState } from "react"
-import { supabase } from "@/lib/supabase"
+import { createSupabaseAuthClient } from "@/lib/supabase-auth-client"
 import { uploadImage } from "@/lib/storage"
 import { useRouter } from "next/navigation"
+
+function slugify(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+}
+
+function optionalNumber(value: string | number | null | undefined) {
+  const trimmed = String(value ?? "").trim()
+  if (!trimmed) return null
+
+  const number = Number(trimmed)
+  return Number.isFinite(number) ? number : null
+}
+
+function fieldValue(value: string | number | null | undefined) {
+  return value === null || value === undefined ? "" : String(value)
+}
+
+function getSupabaseErrorMessage(error: any) {
+  return error?.message || error?.details || "Erreur inconnue"
+}
 
 export default function AttractionEditor({
   attractions,
@@ -13,6 +39,7 @@ export default function AttractionEditor({
   areas: any[]
 }) {
   const router = useRouter()
+  const supabase = createSupabaseAuthClient()
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [name, setName] = useState("")
@@ -70,17 +97,17 @@ export default function AttractionEditor({
     setDescription(attraction.description || "")
     setAreaId(attraction.area_id || "")
     setStatus(attraction.status || "open")
-    setMinHeight(attraction.min_height || "")
+    setMinHeight(fieldValue(attraction.min_height))
     setIsFamily(Boolean(attraction.is_family))
     setIsThrill(Boolean(attraction.is_thrill))
     setIsKids(Boolean(attraction.is_kids))
     setIsAccessiblePmr(Boolean(attraction.is_accessible_pmr))
-    setOpeningYear(attraction.opening_year || "")
+    setOpeningYear(fieldValue(attraction.opening_year))
     setManufacturer(attraction.manufacturer || "")
     setRideDuration(attraction.ride_duration || "")
-    setThrillLevel(String(attraction.thrill_level || 3))
+    setThrillLevel(fieldValue(attraction.thrill_level || 3))
     setRideType(attraction.ride_type || "")
-    setAccompaniedHeight(attraction.accompanied_height || "")
+    setAccompaniedHeight(fieldValue(attraction.accompanied_height))
     setLocationHint(attraction.location_hint || "")
   }
 
@@ -103,31 +130,34 @@ export default function AttractionEditor({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
 
-    if (!name.trim() || !slug.trim()) {
-      alert("Nom et slug obligatoires")
+    const cleanName = name.trim()
+    const cleanSlug = slug.trim() || slugify(cleanName)
+
+    if (!cleanName || !cleanSlug) {
+      alert("Le nom de l'attraction est obligatoire")
       return
     }
 
     const payload = {
-      name,
-      slug,
+      name: cleanName,
+      slug: cleanSlug,
       image_url: imageUrl || null,
       short_description: shortDescription || null,
       description: description || null,
       area_id: areaId || null,
       status,
-      min_height: minHeight ? Number(minHeight) : null,
+      min_height: optionalNumber(minHeight),
       is_family: isFamily,
       is_thrill: isThrill,
       is_kids: isKids,
       is_accessible_pmr: isAccessiblePmr,
-      opening_year: openingYear ? Number(openingYear) : null,
+      opening_year: optionalNumber(openingYear),
       manufacturer: manufacturer || null,
       ride_duration: rideDuration || null,
-      thrill_level: Number(thrillLevel),
+      thrill_level: optionalNumber(thrillLevel) || 3,
       ride_type: rideType || null,
       accompanied_height: accompaniedHeight
-      ? Number(accompaniedHeight)
+      ? optionalNumber(accompaniedHeight)
       : null,
       location_hint: locationHint || null,
     }
@@ -141,7 +171,7 @@ export default function AttractionEditor({
     setLoading(false)
 
     if (error) {
-      alert("Erreur lors de l’enregistrement")
+      alert(`Erreur lors de l'enregistrement : ${getSupabaseErrorMessage(error)}`)
       console.error(error)
       return
     }
