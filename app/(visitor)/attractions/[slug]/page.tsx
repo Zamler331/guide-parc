@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic"
 
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import TrackEventOnMount from "@/components/analytics/TrackEventOnMount"
 import Badge from "@/components/ui/Badge"
 import Card from "@/components/ui/Card"
 import SectionTitle from "@/components/ui/SectionTitle"
@@ -68,6 +69,14 @@ export default async function AttractionPage({
 
   return (
     <main className="min-h-screen bg-slate-100 pb-6">
+      <TrackEventOnMount
+        eventName="attraction_opened"
+        page={`/attractions/${attraction.slug}`}
+        entityType="attraction"
+        entityId={attraction.id}
+        metadata={{ slug: attraction.slug, name: attraction.name }}
+      />
+
       <div className="relative h-64 bg-slate-300">
         {attraction.image_url ? (
           <img

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { trackEvent } from "@/lib/analytics"
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>
@@ -71,6 +72,11 @@ export default function InstallAppButton() {
 
   async function handleInstall() {
     if (!installPrompt) return
+
+    trackEvent("install_button_clicked", {
+      page: window.location.pathname,
+      metadata: { platform: "android" },
+    })
 
     await installPrompt.prompt()
     const choice = await installPrompt.userChoice

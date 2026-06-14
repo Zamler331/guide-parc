@@ -1,15 +1,15 @@
 import Link from "next/link"
 
 const adminLinks = [
-  { href: "/admin", label: "Dashboard", icon: "🏠" },
-  { href: "/admin/attractions", label: "Attractions", icon: "🎢" },
-  { href: "/admin/zones", label: "Zones", icon: "🧭" },
-  { href: "/admin/map", label: "Carte", icon: "🗺️" },
-  { href: "/admin/programme", label: "Programme", icon: "🎭" },
-  { href: "/admin/infos", label: "Infos", icon: "ℹ️" },
-  { href: "/admin/alerts", label: "Alertes", icon: "🚨" },
-  { href: "/admin/opening-hours", label: "Horaires", icon: "🕒" },
-  
+  { href: "/admin", label: "Dashboard", icon: "Home" },
+  { href: "/admin/attractions", label: "Attractions", icon: "Ride" },
+  { href: "/admin/zones", label: "Zones", icon: "Zone" },
+  { href: "/admin/map", label: "Carte", icon: "Map" },
+  { href: "/admin/programme", label: "Programme", icon: "Show" },
+  { href: "/admin/infos", label: "Infos", icon: "Info" },
+  { href: "/admin/alerts", label: "Alertes", icon: "Alert" },
+  { href: "/admin/opening-hours", label: "Horaires", icon: "Time" },
+  { href: "/admin/analytics", label: "Statistiques", icon: "Stats" },
 ]
 
 export default function AdminLayout({
@@ -54,7 +54,7 @@ export default function AdminLayout({
                 href="/"
                 className="rounded-full bg-gray-900 px-4 py-2 text-sm font-semibold text-white"
               >
-                Voir l’app
+                Voir l'app
               </Link>
             </div>
 

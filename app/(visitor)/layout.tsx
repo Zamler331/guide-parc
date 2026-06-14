@@ -1,4 +1,5 @@
 import BottomNav from "@/components/layout/BottomNav"
+import AnalyticsTracker from "@/components/analytics/AnalyticsTracker"
 import OfflineAlertTicker from "@/components/alerts/OfflineAlertTicker"
 import OfflineSync from "@/components/offline/OfflineSync"
 import { getActiveAlerts } from "@/lib/alerts"
@@ -16,6 +17,7 @@ export default async function VisitorLayout({
         <OfflineAlertTicker alerts={alerts} />
 
         <div className="min-h-screen pb-16">
+          <AnalyticsTracker />
           {children}
           <OfflineSync />
           <BottomNav />

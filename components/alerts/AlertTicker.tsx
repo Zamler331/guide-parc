@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { trackEvent } from "@/lib/analytics"
 
 function getStyle(type: string) {
   switch (type) {
@@ -28,6 +29,25 @@ export default function AlertTicker({ alerts }: { alerts: any[] }) {
     const isClosed = sessionStorage.getItem(`visitor-alert-closed-${alertKey}`)
     setClosed(isClosed === "true")
   }, [alertKey])
+
+  useEffect(() => {
+    if (!alerts || alerts.length === 0 || closed || !alertKey) return
+    if (sessionStorage.getItem(`visitor-alert-seen-${alertKey}`)) return
+
+    sessionStorage.setItem(`visitor-alert-seen-${alertKey}`, "true")
+
+    alerts.forEach((alert) => {
+      trackEvent("alert_seen", {
+        page: window.location.pathname,
+        entityType: "alert",
+        entityId: alert.id,
+        metadata: {
+          type: alert.type,
+          title: alert.title,
+        },
+      })
+    })
+  }, [alerts, alertKey, closed])
 
   if (!alerts || alerts.length === 0 || closed) return null
 
