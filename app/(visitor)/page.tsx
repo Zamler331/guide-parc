@@ -1,4 +1,5 @@
 import OfflineTodayOpeningCard from "@/components/opening/OfflineTodayOpeningCard"
+import InstallAppButton from "@/components/pwa/InstallAppButton"
 import { getTodayOpening } from "@/lib/opening-hours"
 
 export default async function HomePage() {
@@ -23,6 +24,8 @@ export default async function HomePage() {
             Preparez votre journee en famille.
           </p>
         </div>
+
+        <InstallAppButton />
 
         <img
           src="/home-mascotte.png"
