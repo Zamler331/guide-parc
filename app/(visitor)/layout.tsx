@@ -12,16 +12,17 @@ export default async function VisitorLayout({
   const alerts = await getActiveAlerts()
 
   return (
-    <div className="min-h-screen bg-gray-100 flex justify-center">
-      <div className="w-full max-w-md min-h-screen bg-white shadow-sm">
+    <div className="flex h-dvh justify-center overflow-hidden bg-gray-100">
+      <div className="flex h-full w-full max-w-md flex-col overflow-hidden bg-white shadow-sm">
         <OfflineAlertTicker alerts={alerts} />
 
-        <div className="min-h-screen pb-16">
+        <div className="min-h-0 flex-1 overflow-y-auto">
           <AnalyticsTracker />
           {children}
-          <OfflineSync />
-          <BottomNav />
         </div>
+
+        <OfflineSync />
+        <BottomNav />
       </div>
     </div>
   )

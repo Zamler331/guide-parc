@@ -1,4 +1,5 @@
 import { supabase } from "./supabase"
+import { connection } from "next/server"
 
 function getAttractionSlugFromTargetUrl(targetUrl?: string | null) {
   const match = targetUrl?.match(/^\/attractions\/([^/?#]+)/)
@@ -42,6 +43,8 @@ async function attachAttractionsFromTargetUrl(points: any[]) {
 }
 
 export async function getMapPoints() {
+  await connection()
+
   const { data, error } = await supabase
     .from("map_points")
     .select(`
@@ -61,6 +64,8 @@ export async function getMapPoints() {
 }
 
 export async function getAllMapPoints() {
+  await connection()
+
   const { data, error } = await supabase
     .from("map_points")
     .select(`

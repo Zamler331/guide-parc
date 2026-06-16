@@ -5,6 +5,7 @@ import { readFromCache } from "@/lib/offline-cache"
 
 export function useOfflineData(cacheKey: string, serverData: any[]) {
   const [data, setData] = useState(serverData)
+  const serverDataSignature = JSON.stringify(serverData)
 
   useEffect(() => {
     const cached = readFromCache(cacheKey)
@@ -17,7 +18,7 @@ export function useOfflineData(cacheKey: string, serverData: any[]) {
     }
 
     setData(serverData)
-  }, [cacheKey])
+  }, [cacheKey, serverDataSignature])
 
   return data
 }

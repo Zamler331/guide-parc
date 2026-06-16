@@ -6,7 +6,7 @@ export default async function HomePage() {
   const opening = await getTodayOpening()
 
   return (
-    <main className="h-screen overflow-hidden bg-blue-700 text-white">
+    <main className="h-full overflow-hidden bg-blue-700 text-white">
       <section className="relative flex h-full flex-col items-center justify-between px-4 py-5 text-center">
         <div className="absolute inset-0 bg-gradient-to-b from-sky-400 via-blue-600 to-indigo-950" />
 
@@ -17,11 +17,11 @@ export default async function HomePage() {
             Guide du parc
           </p>
           <h1 className="mt-2 text-4xl font-black leading-tight drop-shadow-lg">
-            Bienvenue a la Recre
+            Bienvenue a la Récre !
           </h1>
 
           <p className="mt-2 text-base font-bold leading-5 text-blue-50 drop-shadow">
-            Preparez votre journee en famille.
+            Preparez votre journée en famille.
           </p>
         </div>
 
@@ -30,7 +30,7 @@ export default async function HomePage() {
         <img
           src="/home-mascotte.png"
           alt="Mascotte du parc"
-          className="relative z-10 -mt-1 max-h-[300px] w-auto object-contain drop-shadow-2xl"
+          className="relative z-10 -mt-1 max-h-[clamp(160px,32vh,300px)] w-auto object-contain drop-shadow-2xl"
         />
 
         <div className="relative z-20 -mt-10 grid w-full grid-cols-2 gap-3">
@@ -84,7 +84,7 @@ function HomeButton({
   return (
     <a
       href={href}
-      className={`${color} ${shadow} flex min-h-24 items-center justify-center rounded-2xl p-3 text-center text-sm font-black leading-tight text-white shadow-xl transition active:scale-95`}
+      className={`${color} ${shadow} flex min-h-20 items-center justify-center rounded-2xl p-3 text-center text-sm font-black leading-tight text-white shadow-xl transition active:scale-95`}
     >
       {label}
     </a>

@@ -130,7 +130,7 @@ export default function InteractiveMap({
   const showClusters = scale < 1.75 && filter === "all"
 
   return (
-    <div className="relative h-[calc(100vh-64px)] overflow-hidden bg-[#a3a463]">
+    <div className="relative h-full min-h-0 overflow-hidden bg-[#a3a463]">
       <div className="absolute left-0 right-0 top-0 z-30 border-b border-white/50 bg-white/90 px-3 py-3 shadow-sm backdrop-blur">
         <div className="flex gap-2 overflow-x-auto pb-1">
           {TYPES.map((type) => {

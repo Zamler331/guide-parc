@@ -1,6 +1,9 @@
 import { supabase } from "./supabase"
+import { connection } from "next/server"
 
 export async function getAttractions() {
+  await connection()
+
   const { data, error } = await supabase
     .from("attractions")
     .select(`
@@ -20,6 +23,8 @@ export async function getAttractions() {
 }
 
 export async function getAttractionBySlug(slug: string) {
+  await connection()
+
   const { data, error } = await supabase
     .from("attractions")
     .select(`
