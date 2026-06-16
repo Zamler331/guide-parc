@@ -40,6 +40,8 @@ function attachAttractionsToMapPoints(mapPoints: any[], attractions: any[]) {
 
 export default function OfflineSync() {
   const [status, setStatus] = useState("Preparation du guide...")
+  const [visible, setVisible] = useState(false)
+  const [rendered, setRendered] = useState(false)
 
   useEffect(() => {
     async function syncData() {
@@ -167,5 +169,34 @@ export default function OfflineSync() {
     syncData()
   }, [])
 
-  return <div className="px-4 pt-2 text-xs text-gray-500">{status}</div>
+  useEffect(() => {
+    if (status === "Preparation du guide...") return
+
+    setRendered(true)
+    setVisible(true)
+    const hideTimer = window.setTimeout(() => {
+      setVisible(false)
+    }, 5000)
+    const removeTimer = window.setTimeout(() => {
+      setRendered(false)
+    }, 5700)
+
+    return () => {
+      window.clearTimeout(hideTimer)
+      window.clearTimeout(removeTimer)
+    }
+  }, [status])
+
+  if (!rendered) return null
+
+  return (
+    <div
+      className={`pointer-events-none fixed bottom-16 left-1/2 z-40 -translate-x-1/2 rounded-full bg-white/85 px-3 py-1 text-center text-[10px] font-medium text-gray-400 shadow-sm backdrop-blur transition-opacity duration-700 ${
+        visible ? "opacity-100" : "pointer-events-none opacity-0"
+      }`}
+      aria-live="polite"
+    >
+      {status}
+    </div>
+  )
 }

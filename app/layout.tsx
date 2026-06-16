@@ -1,5 +1,20 @@
 import type { Metadata, Viewport } from "next"
+import localFont from "next/font/local"
 import "./globals.css"
+
+const bodyFont = localFont({
+  src: "../node_modules/next/dist/next-devtools/server/font/geist-latin.woff2",
+  display: "swap",
+  weight: "100 900",
+  variable: "--font-body",
+})
+
+const headingFont = localFont({
+  src: "../node_modules/next/dist/next-devtools/server/font/geist-latin.woff2",
+  display: "swap",
+  weight: "100 900",
+  variable: "--font-heading",
+})
 
 export const metadata: Metadata = {
   title: "Guide Parc",
@@ -17,7 +32,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="fr">
+    <html lang="fr" className={`${bodyFont.variable} ${headingFont.variable}`}>
       <body>{children}</body>
     </html>
   )

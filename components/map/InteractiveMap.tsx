@@ -89,7 +89,7 @@ function getZoneClusters(points: any[]) {
     groups[key].push(point)
   })
 
-  return Object.entries(groups).map(([areaId, items]) => {
+  const clusters = Object.entries(groups).map(([areaId, items]) => {
     const avgX =
       items.reduce((sum, point) => sum + Number(point.x), 0) / items.length
     const avgY =
@@ -101,8 +101,47 @@ function getZoneClusters(points: any[]) {
       count: items.length,
       x: avgX,
       y: avgY,
+      displayX: avgX,
+      displayY: avgY,
     }
   })
+
+  return spreadCloseClusters(clusters)
+}
+
+function spreadCloseClusters(clusters: any[]) {
+  const placed: any[] = []
+  const minDistance = 8
+  const offsets = [
+    [0, 0],
+    [-7, -5],
+    [7, -5],
+    [-8, 5],
+    [8, 5],
+    [0, -9],
+    [0, 9],
+    [-12, 0],
+    [12, 0],
+  ]
+
+  return clusters
+    .sort((a, b) => b.count - a.count)
+    .map((cluster) => {
+      const closeCount = placed.filter((placedCluster) => {
+        const dx = placedCluster.x - cluster.x
+        const dy = placedCluster.y - cluster.y
+        return Math.sqrt(dx * dx + dy * dy) < minDistance
+      }).length
+      const [offsetX, offsetY] = offsets[closeCount % offsets.length]
+      const nextCluster = {
+        ...cluster,
+        displayX: Math.min(94, Math.max(6, cluster.x + offsetX)),
+        displayY: Math.min(94, Math.max(8, cluster.y + offsetY)),
+      }
+
+      placed.push(nextCluster)
+      return nextCluster
+    })
 }
 
 export default function InteractiveMap({
@@ -207,7 +246,10 @@ export default function InteractiveMap({
               wrapperClass="!h-full !w-full !bg-[#a3a463]"
               contentClass="!w-auto !h-auto !bg-[#a3a463]"
             >
-              <div className="relative mt-16 w-[1100px] max-w-none touch-none">
+              <div
+                className="relative mt-16 w-[1100px] max-w-none touch-none"
+                onClick={() => setSelectedPoint(null)}
+              >
                 <img
                   src={mapSrc}
                   alt="Plan du parc"
@@ -237,19 +279,21 @@ export default function InteractiveMap({
                           }}
                           className="absolute"
                           style={{
-                            left: `${cluster.x}%`,
-                            top: `${cluster.y}%`,
+                            left: `${cluster.displayX}%`,
+                            top: `${cluster.displayY}%`,
                             transform: `translate(-50%, -50%) scale(${1 / scale})`,
                             transformOrigin: "center",
                           }}
                           title={areaName}
                         >
                           <span
-                            className="flex min-h-10 items-center gap-2 rounded-full border-2 border-white px-3 py-2 text-xs font-black text-white shadow-xl"
+                            className="flex min-h-11 max-w-36 items-center gap-2 rounded-2xl border-2 border-white px-3 py-2 text-left text-xs font-black leading-tight text-white shadow-xl"
                             style={{ backgroundColor: areaColor }}
                           >
-                            <span>{areaName}</span>
-                            <span className="rounded-full bg-white/20 px-2 py-0.5">
+                            <span className="min-w-0 truncate">
+                              {areaName}
+                            </span>
+                            <span className="shrink-0 rounded-full bg-white/25 px-2 py-0.5">
                               {cluster.count}
                             </span>
                           </span>
@@ -309,6 +353,15 @@ export default function InteractiveMap({
 
       {selectedPoint && (
         <div className="absolute bottom-3 left-3 right-3 z-40">
+          <button
+            type="button"
+            onClick={() => setSelectedPoint(null)}
+            className="absolute -top-3 right-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-slate-950 text-lg font-black leading-none text-white shadow-lg active:scale-95"
+            aria-label="Fermer la fiche"
+          >
+            x
+          </button>
+
           <Link
             href={getPointLink(selectedPoint)}
             className="block rounded-2xl border border-slate-100 bg-white p-3 shadow-2xl active:scale-[0.99]"
