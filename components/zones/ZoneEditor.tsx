@@ -1,11 +1,31 @@
 "use client"
 
 import { useState } from "react"
-import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
+import { createSupabaseAuthClient } from "@/lib/supabase-auth-client"
+import OpeningRuleFields from "@/components/opening/OpeningRuleFields"
 
-export default function ZoneEditor({ zones }: { zones: any[] }) {
+function findOpeningRule(rules: any[], targetType: string, targetId: string) {
+  return rules.find(
+    (rule) =>
+      rule.target_type === targetType &&
+      rule.target_id === targetId &&
+      !rule.starts_on &&
+      !rule.ends_on
+  )
+}
+
+export default function ZoneEditor({
+  zones,
+  schedules,
+  openingRules,
+}: {
+  zones: any[]
+  schedules: any[]
+  openingRules: any[]
+}) {
   const router = useRouter()
+  const supabase = createSupabaseAuthClient()
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [name, setName] = useState("")
@@ -13,6 +33,9 @@ export default function ZoneEditor({ zones }: { zones: any[] }) {
   const [description, setDescription] = useState("")
   const [sortOrder, setSortOrder] = useState(0)
   const [isActive, setIsActive] = useState(true)
+  const [openingScheduleId, setOpeningScheduleId] = useState("")
+  const [openingNote, setOpeningNote] = useState("")
+  const [openingRuleActive, setOpeningRuleActive] = useState(true)
   const [loading, setLoading] = useState(false)
 
   const isEditing = Boolean(selectedId)
@@ -24,15 +47,69 @@ export default function ZoneEditor({ zones }: { zones: any[] }) {
     setDescription("")
     setSortOrder(0)
     setIsActive(true)
+    setOpeningScheduleId("")
+    setOpeningNote("")
+    setOpeningRuleActive(true)
   }
 
   function selectZone(zone: any) {
+    const openingRule = findOpeningRule(openingRules, "park_area", zone.id)
+
     setSelectedId(zone.id)
     setName(zone.name || "")
     setColor(zone.color || "#2563eb")
     setDescription(zone.description || "")
     setSortOrder(zone.sort_order || 0)
     setIsActive(Boolean(zone.is_active))
+    setOpeningScheduleId(openingRule?.schedule_id || "")
+    setOpeningNote(openingRule?.note || "")
+    setOpeningRuleActive(openingRule?.is_active ?? true)
+  }
+
+  async function saveOpeningRule(targetId: string) {
+    const existingRule = openingRules.find(
+      (rule) =>
+        rule.target_type === "park_area" &&
+        rule.target_id === targetId &&
+        !rule.starts_on &&
+        !rule.ends_on
+    )
+
+    if (!openingScheduleId) {
+      let query = supabase
+        .from("entity_opening_rules")
+        .delete()
+        .eq("target_type", "park_area")
+        .eq("target_id", targetId)
+
+      if (existingRule?.id) query = query.eq("id", existingRule.id)
+
+      const { error } = await query
+
+      if (error) throw error
+      return
+    }
+
+    const payload = {
+      target_type: "park_area",
+      target_id: targetId,
+      schedule_id: openingScheduleId,
+      note: openingNote || null,
+      is_active: openingRuleActive,
+      starts_on: null,
+      ends_on: null,
+      weekdays: [0, 1, 2, 3, 4, 5, 6],
+      updated_at: new Date().toISOString(),
+    }
+
+    const { error } = existingRule?.id
+      ? await supabase
+          .from("entity_opening_rules")
+          .update(payload)
+          .eq("id", existingRule.id)
+      : await supabase.from("entity_opening_rules").insert(payload)
+
+    if (error) throw error
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -53,18 +130,29 @@ export default function ZoneEditor({ zones }: { zones: any[] }) {
 
     setLoading(true)
 
-    const { error } = isEditing
+    const result = isEditing
       ? await supabase.from("park_areas").update(payload).eq("id", selectedId)
-      : await supabase.from("park_areas").insert(payload)
+      : await supabase.from("park_areas").insert(payload).select("id").single()
 
-    setLoading(false)
+    const targetId = isEditing ? selectedId : result.data?.id
 
-    if (error) {
-      alert("Erreur lors de l’enregistrement")
+    if (result.error || !targetId) {
+      setLoading(false)
+      alert("Erreur lors de l'enregistrement")
+      console.error(result.error)
+      return
+    }
+
+    try {
+      await saveOpeningRule(targetId)
+    } catch (error) {
+      setLoading(false)
+      alert("La zone est enregistree, mais pas son horaire specifique.")
       console.error(error)
       return
     }
 
+    setLoading(false)
     resetForm()
     router.refresh()
   }
@@ -81,7 +169,7 @@ export default function ZoneEditor({ zones }: { zones: any[] }) {
       .eq("id", selectedId)
 
     if (error) {
-      alert("Impossible de supprimer cette zone. Elle est peut-être utilisée.")
+      alert("Impossible de supprimer cette zone. Elle est peut-etre utilisee.")
       console.error(error)
       return
     }
@@ -138,7 +226,7 @@ export default function ZoneEditor({ zones }: { zones: any[] }) {
         <input
           type="number"
           className="mt-3 w-full rounded-xl border p-3"
-          placeholder="Ordre d’affichage"
+          placeholder="Ordre d'affichage"
           value={sortOrder}
           onChange={(e) => setSortOrder(Number(e.target.value))}
         />
@@ -152,6 +240,17 @@ export default function ZoneEditor({ zones }: { zones: any[] }) {
           Zone active
         </label>
 
+        <OpeningRuleFields
+          schedules={schedules}
+          scheduleId={openingScheduleId}
+          note={openingNote}
+          isActive={openingRuleActive}
+          inheritedLabel="Aucun horaire specifique pour cette zone"
+          onScheduleIdChange={setOpeningScheduleId}
+          onNoteChange={setOpeningNote}
+          onIsActiveChange={setOpeningRuleActive}
+        />
+
         <button
           disabled={loading}
           className="mt-4 w-full rounded-xl bg-gray-900 p-3 font-semibold text-white disabled:opacity-50"
@@ -159,8 +258,8 @@ export default function ZoneEditor({ zones }: { zones: any[] }) {
           {loading
             ? "Enregistrement..."
             : isEditing
-            ? "Enregistrer les modifications"
-            : "Créer la zone"}
+              ? "Enregistrer les modifications"
+              : "Creer la zone"}
         </button>
 
         {isEditing && (
@@ -180,49 +279,59 @@ export default function ZoneEditor({ zones }: { zones: any[] }) {
             Aucune zone pour le moment.
           </div>
         ) : (
-          zones.map((zone) => (
-            <button
-              key={zone.id}
-              type="button"
-              onClick={() => selectZone(zone)}
-              className={`w-full rounded-3xl bg-white p-5 text-left shadow-sm transition hover:shadow-md ${
-                selectedId === zone.id ? "ring-2 ring-gray-900" : ""
-              }`}
-            >
-              <div className="flex items-start gap-4">
-                <div
-                  className="h-12 w-12 shrink-0 rounded-2xl"
-                  style={{ backgroundColor: zone.color || "#2563eb" }}
-                />
+          zones.map((zone) => {
+            const openingRule = findOpeningRule(openingRules, "park_area", zone.id)
 
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="font-bold text-gray-900">{zone.name}</h3>
+            return (
+              <button
+                key={zone.id}
+                type="button"
+                onClick={() => selectZone(zone)}
+                className={`w-full rounded-3xl bg-white p-5 text-left shadow-sm transition hover:shadow-md ${
+                  selectedId === zone.id ? "ring-2 ring-gray-900" : ""
+                }`}
+              >
+                <div className="flex items-start gap-4">
+                  <div
+                    className="h-12 w-12 shrink-0 rounded-2xl"
+                    style={{ backgroundColor: zone.color || "#2563eb" }}
+                  />
 
-                    <span
-                      className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                        zone.is_active
-                          ? "bg-green-100 text-green-700"
-                          : "bg-gray-100 text-gray-600"
-                      }`}
-                    >
-                      {zone.is_active ? "Active" : "Inactive"}
-                    </span>
-                  </div>
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="font-bold text-gray-900">{zone.name}</h3>
 
-                  {zone.description && (
-                    <p className="mt-2 text-sm text-gray-500">
-                      {zone.description}
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                          zone.is_active
+                            ? "bg-green-100 text-green-700"
+                            : "bg-gray-100 text-gray-600"
+                        }`}
+                      >
+                        {zone.is_active ? "Active" : "Inactive"}
+                      </span>
+
+                      {openingRule?.schedule && (
+                        <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                          {openingRule.schedule.name}
+                        </span>
+                      )}
+                    </div>
+
+                    {zone.description && (
+                      <p className="mt-2 text-sm text-gray-500">
+                        {zone.description}
+                      </p>
+                    )}
+
+                    <p className="mt-3 text-xs text-gray-400">
+                      Ordre : {zone.sort_order}
                     </p>
-                  )}
-
-                  <p className="mt-3 text-xs text-gray-400">
-                    Ordre : {zone.sort_order}
-                  </p>
+                  </div>
                 </div>
-              </div>
-            </button>
-          ))
+              </button>
+            )
+          })
         )}
       </div>
     </div>

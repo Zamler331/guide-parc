@@ -5,6 +5,7 @@ import { createSupabaseAuthClient } from "@/lib/supabase-auth-client"
 import { useRouter } from "next/navigation"
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch"
 import { uploadImage } from "@/lib/storage"
+import OpeningRuleFields from "@/components/opening/OpeningRuleFields"
 
 const TYPES = [
   { value: "attraction", label: "Attraction", color: "bg-red-500" },
@@ -24,14 +25,28 @@ function getSupabaseErrorMessage(error: any) {
   return error?.message || error?.details || "Erreur inconnue"
 }
 
+function findOpeningRule(rules: any[], targetType: string, targetId: string) {
+  return rules.find(
+    (rule) =>
+      rule.target_type === targetType &&
+      rule.target_id === targetId &&
+      !rule.starts_on &&
+      !rule.ends_on
+  )
+}
+
 export default function AdminMapEditor({
   points,
   attractions,
   areas,
+  schedules,
+  openingRules,
 }: {
   points: any[]
   attractions: any[]
   areas: any[]
+  schedules: any[]
+  openingRules: any[]
 }) {
   const router = useRouter()
   const supabase = createSupabaseAuthClient()
@@ -50,6 +65,9 @@ export default function AdminMapEditor({
   const [scale, setScale] = useState(1)
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const [attractionId, setAttractionId] = useState("")
+  const [openingScheduleId, setOpeningScheduleId] = useState("")
+  const [openingNote, setOpeningNote] = useState("")
+  const [openingRuleActive, setOpeningRuleActive] = useState(true)
 
   const selectedPoint = points.find((p) => p.id === selectedId)
 
@@ -66,9 +84,14 @@ export default function AdminMapEditor({
     setIsActive(true)
     setAreaId("")
     setAttractionId("")
+    setOpeningScheduleId("")
+    setOpeningNote("")
+    setOpeningRuleActive(true)
   }
 
   function selectPoint(point: any) {
+    const openingRule = findOpeningRule(openingRules, "map_point", point.id)
+
     setSelectedId(point.id)
     setX(point.x)
     setY(point.y)
@@ -86,6 +109,55 @@ export default function AdminMapEditor({
     }
     setAreaId(point.area_id || "")
     setAttractionId(point.attraction_id || "")
+    setOpeningScheduleId(openingRule?.schedule_id || "")
+    setOpeningNote(openingRule?.note || "")
+    setOpeningRuleActive(openingRule?.is_active ?? true)
+  }
+
+  async function saveOpeningRule(targetId: string) {
+    const existingRule = openingRules.find(
+      (rule) =>
+        rule.target_type === "map_point" &&
+        rule.target_id === targetId &&
+        !rule.starts_on &&
+        !rule.ends_on
+    )
+
+    if (!openingScheduleId) {
+      let query = supabase
+        .from("entity_opening_rules")
+        .delete()
+        .eq("target_type", "map_point")
+        .eq("target_id", targetId)
+
+      if (existingRule?.id) query = query.eq("id", existingRule.id)
+
+      const { error } = await query
+
+      if (error) throw error
+      return
+    }
+
+    const payload = {
+      target_type: "map_point",
+      target_id: targetId,
+      schedule_id: openingScheduleId,
+      note: openingNote || null,
+      is_active: openingRuleActive,
+      starts_on: null,
+      ends_on: null,
+      weekdays: [0, 1, 2, 3, 4, 5, 6],
+      updated_at: new Date().toISOString(),
+    }
+
+    const { error } = existingRule?.id
+      ? await supabase
+          .from("entity_opening_rules")
+          .update(payload)
+          .eq("id", existingRule.id)
+      : await supabase.from("entity_opening_rules").insert(payload)
+
+    if (error) throw error
   }
 
   function handleMapClick(e: React.MouseEvent<HTMLDivElement>) {
@@ -169,18 +241,33 @@ export default function AdminMapEditor({
 
     setLoading(true)
 
-    const { error } = selectedId
+    const result = selectedId
       ? await supabase.from("map_points").update(payload).eq("id", selectedId)
-      : await supabase.from("map_points").insert(payload)
+      : await supabase.from("map_points").insert(payload).select("id").single()
 
-    setLoading(false)
+    const targetId = selectedId || result.data?.id
 
-    if (error) {
-      alert(`Erreur lors de l'enregistrement du point : ${getSupabaseErrorMessage(error)}`)
+    if (result.error || !targetId) {
+      setLoading(false)
+      alert(
+        `Erreur lors de l'enregistrement du point : ${getSupabaseErrorMessage(
+          result.error
+        )}`
+      )
+      console.error(result.error)
+      return
+    }
+
+    try {
+      await saveOpeningRule(targetId)
+    } catch (error) {
+      setLoading(false)
+      alert("Le point est enregistre, mais pas son horaire specifique.")
       console.error(error)
       return
     }
 
+    setLoading(false)
     resetForm()
     router.refresh()
   }
@@ -481,6 +568,17 @@ export default function AdminMapEditor({
             />
             Point visible côté visiteur
           </label>
+
+          <OpeningRuleFields
+            schedules={schedules}
+            scheduleId={openingScheduleId}
+            note={openingNote}
+            isActive={openingRuleActive}
+            inheritedLabel="Aucun horaire specifique pour ce point"
+            onScheduleIdChange={setOpeningScheduleId}
+            onNoteChange={setOpeningNote}
+            onIsActiveChange={setOpeningRuleActive}
+          />
 
           {imageUrl && (
             <div className="overflow-hidden rounded-2xl border">

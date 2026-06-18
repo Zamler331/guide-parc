@@ -1,10 +1,16 @@
 import { getAttractions } from "@/lib/attractions"
 import { getParkAreas } from "@/lib/park-areas"
+import {
+  getEntityOpeningRules,
+  getEntityOpeningSchedules,
+} from "@/lib/opening-hours"
 import AttractionEditor from "@/components/attractions/AttractionEditor"
 
 export default async function AdminAttractionsPage() {
   const attractions = await getAttractions()
   const areas = await getParkAreas()
+  const schedules = await getEntityOpeningSchedules()
+  const openingRules = await getEntityOpeningRules()
 
   return (
     <div className="space-y-6">
@@ -15,7 +21,12 @@ export default async function AdminAttractionsPage() {
         </p>
       </div>
 
-      <AttractionEditor attractions={attractions} areas={areas} />
+      <AttractionEditor
+        attractions={attractions}
+        areas={areas}
+        schedules={schedules}
+        openingRules={openingRules}
+      />
     </div>
   )
 }

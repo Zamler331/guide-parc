@@ -4,6 +4,7 @@ import { useState } from "react"
 import { createSupabaseAuthClient } from "@/lib/supabase-auth-client"
 import { uploadImage } from "@/lib/storage"
 import { useRouter } from "next/navigation"
+import OpeningRuleFields from "@/components/opening/OpeningRuleFields"
 
 function slugify(value: string) {
   return value
@@ -31,12 +32,26 @@ function getSupabaseErrorMessage(error: any) {
   return error?.message || error?.details || "Erreur inconnue"
 }
 
+function findOpeningRule(rules: any[], targetType: string, targetId: string) {
+  return rules.find(
+    (rule) =>
+      rule.target_type === targetType &&
+      rule.target_id === targetId &&
+      !rule.starts_on &&
+      !rule.ends_on
+  )
+}
+
 export default function AttractionEditor({
   attractions,
   areas,
+  schedules,
+  openingRules,
 }: {
   attractions: any[]
   areas: any[]
+  schedules: any[]
+  openingRules: any[]
 }) {
   const router = useRouter()
   const supabase = createSupabaseAuthClient()
@@ -62,6 +77,9 @@ export default function AttractionEditor({
   const [rideType, setRideType] = useState("")
   const [accompaniedHeight, setAccompaniedHeight] = useState("")
   const [locationHint, setLocationHint] = useState("")
+  const [openingScheduleId, setOpeningScheduleId] = useState("")
+  const [openingNote, setOpeningNote] = useState("")
+  const [openingRuleActive, setOpeningRuleActive] = useState(true)
 
   const isEditing = Boolean(selectedId)
 
@@ -86,9 +104,14 @@ export default function AttractionEditor({
     setRideType("")
     setAccompaniedHeight("")
     setLocationHint("")
+    setOpeningScheduleId("")
+    setOpeningNote("")
+    setOpeningRuleActive(true)
   }
 
   function selectAttraction(attraction: any) {
+    const openingRule = findOpeningRule(openingRules, "attraction", attraction.id)
+
     setSelectedId(attraction.id)
     setName(attraction.name || "")
     setSlug(attraction.slug || "")
@@ -109,6 +132,55 @@ export default function AttractionEditor({
     setRideType(attraction.ride_type || "")
     setAccompaniedHeight(fieldValue(attraction.accompanied_height))
     setLocationHint(attraction.location_hint || "")
+    setOpeningScheduleId(openingRule?.schedule_id || "")
+    setOpeningNote(openingRule?.note || "")
+    setOpeningRuleActive(openingRule?.is_active ?? true)
+  }
+
+  async function saveOpeningRule(targetId: string) {
+    const existingRule = openingRules.find(
+      (rule) =>
+        rule.target_type === "attraction" &&
+        rule.target_id === targetId &&
+        !rule.starts_on &&
+        !rule.ends_on
+    )
+
+    if (!openingScheduleId) {
+      let query = supabase
+        .from("entity_opening_rules")
+        .delete()
+        .eq("target_type", "attraction")
+        .eq("target_id", targetId)
+
+      if (existingRule?.id) query = query.eq("id", existingRule.id)
+
+      const { error } = await query
+
+      if (error) throw error
+      return
+    }
+
+    const payload = {
+      target_type: "attraction",
+      target_id: targetId,
+      schedule_id: openingScheduleId,
+      note: openingNote || null,
+      is_active: openingRuleActive,
+      starts_on: null,
+      ends_on: null,
+      weekdays: [0, 1, 2, 3, 4, 5, 6],
+      updated_at: new Date().toISOString(),
+    }
+
+    const { error } = existingRule?.id
+      ? await supabase
+          .from("entity_opening_rules")
+          .update(payload)
+          .eq("id", existingRule.id)
+      : await supabase.from("entity_opening_rules").insert(payload)
+
+    if (error) throw error
   }
 
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -164,18 +236,33 @@ export default function AttractionEditor({
 
     setLoading(true)
 
-    const { error } = isEditing
+    const result = isEditing
       ? await supabase.from("attractions").update(payload).eq("id", selectedId)
-      : await supabase.from("attractions").insert(payload)
+      : await supabase.from("attractions").insert(payload).select("id").single()
 
-    setLoading(false)
+    const targetId = isEditing ? selectedId : result.data?.id
 
-    if (error) {
-      alert(`Erreur lors de l'enregistrement : ${getSupabaseErrorMessage(error)}`)
+    if (result.error || !targetId) {
+      setLoading(false)
+      alert(
+        `Erreur lors de l'enregistrement : ${getSupabaseErrorMessage(
+          result.error
+        )}`
+      )
+      console.error(result.error)
+      return
+    }
+
+    try {
+      await saveOpeningRule(targetId)
+    } catch (error) {
+      setLoading(false)
+      alert("L'attraction est enregistree, mais pas son horaire specifique.")
       console.error(error)
       return
     }
 
+    setLoading(false)
     resetForm()
     router.refresh()
   }
@@ -432,6 +519,17 @@ export default function AttractionEditor({
     onChange={(e) => setLocationHint(e.target.value)}
   />
 </div>
+
+        <OpeningRuleFields
+          schedules={schedules}
+          scheduleId={openingScheduleId}
+          note={openingNote}
+          isActive={openingRuleActive}
+          inheritedLabel="Aucun horaire specifique pour cette attraction"
+          onScheduleIdChange={setOpeningScheduleId}
+          onNoteChange={setOpeningNote}
+          onIsActiveChange={setOpeningRuleActive}
+        />
 
         <button
           disabled={loading}

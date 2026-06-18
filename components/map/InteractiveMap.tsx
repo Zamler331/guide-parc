@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react"
 import Link from "next/link"
 import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch"
+import { getEffectiveOpeningDisplay } from "@/lib/opening-display"
 
 const TYPES = [
   { value: "all", label: "Tous", shortLabel: "Tous" },
@@ -146,9 +147,11 @@ function spreadCloseClusters(clusters: any[]) {
 
 export default function InteractiveMap({
   points,
+  opening,
   mapSrc = "/map.png",
 }: {
   points: any[]
+  opening: any
   mapSrc?: string
 }) {
   const [filter, setFilter] = useState("all")
@@ -167,6 +170,9 @@ export default function InteractiveMap({
   )
 
   const showClusters = scale < 1.75 && filter === "all"
+  const selectedPointOpening = selectedPoint
+    ? getEffectiveOpeningDisplay(selectedPoint, opening)
+    : null
 
   return (
     <div className="relative h-full min-h-0 overflow-hidden bg-[#a3a463]">
@@ -402,6 +408,17 @@ export default function InteractiveMap({
                   <p className="mt-1 text-xs font-bold text-slate-500">
                     {selectedPoint.area.name}
                   </p>
+                )}
+
+                {selectedPointOpening && (
+                  <div className="mt-1 rounded-xl bg-emerald-50 px-2 py-1">
+                    <p className="text-[10px] font-black uppercase text-emerald-600">
+                      {selectedPointOpening.sourceLabel}
+                    </p>
+                    <p className="text-xs font-black text-emerald-800">
+                      {selectedPointOpening.label}
+                    </p>
+                  </div>
                 )}
 
                 {getPointDescription(selectedPoint) && (

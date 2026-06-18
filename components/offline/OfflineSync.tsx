@@ -38,6 +38,81 @@ function attachAttractionsToMapPoints(mapPoints: any[], attractions: any[]) {
   })
 }
 
+function attachOpeningRulesToItems(
+  items: any[],
+  targetType: "attraction" | "map_point",
+  rules: any[]
+) {
+  const weekday = new Date().getDay()
+  const today = getTodayKey()
+  const appliesToday = (rule: any) => {
+    const weekdays = Array.isArray(rule.weekdays) ? rule.weekdays : []
+
+    if (rule.starts_on && rule.starts_on > today) return false
+    if (rule.ends_on && rule.ends_on < today) return false
+    if (weekdays.length > 0 && !weekdays.includes(weekday)) return false
+
+    return true
+  }
+  const getCurrentRule = (rulesById: Map<any, any[]>, id?: string | null) => {
+    if (!id) return null
+    return (rulesById.get(id) || [])
+      .sort((a, b) => String(b.starts_on || "").localeCompare(String(a.starts_on || "")))
+      .find(appliesToday)
+  }
+  const groupRules = (target: string) => {
+    const rulesById = new Map<any, any[]>()
+
+    rules
+      .filter((rule) => rule.target_type === target)
+      .forEach((rule) => {
+        const list = rulesById.get(rule.target_id) || []
+        list.push(rule)
+        rulesById.set(rule.target_id, list)
+      })
+
+    return rulesById
+  }
+
+  const itemRulesById = groupRules(targetType)
+  const areaRulesById = groupRules("park_area")
+  const attractionRulesById = groupRules("attraction")
+  const restaurantRulesById = groupRules("restaurant")
+  const shopRulesById = groupRules("shop")
+
+  return items.map((item) => {
+    const itemRule = getCurrentRule(itemRulesById, item.id)
+    const attractionRule =
+      targetType === "map_point"
+        ? getCurrentRule(attractionRulesById, item.attraction_id || item.attraction?.id)
+        : null
+    const restaurantRule =
+      targetType === "map_point"
+        ? getCurrentRule(restaurantRulesById, item.restaurant_id || item.restaurant?.id)
+        : null
+    const shopRule =
+      targetType === "map_point"
+        ? getCurrentRule(shopRulesById, item.shop_id || item.shop?.id)
+        : null
+    const areaRule = getCurrentRule(areaRulesById, item.area_id)
+
+    return {
+      ...item,
+      entity_opening_rule: itemRule
+        ? { ...itemRule, source: "specific" }
+        : attractionRule
+          ? { ...attractionRule, source: "specific" }
+          : restaurantRule
+            ? { ...restaurantRule, source: "specific" }
+            : shopRule
+              ? { ...shopRule, source: "specific" }
+              : areaRule
+                ? { ...areaRule, source: "area" }
+                : null,
+    }
+  })
+}
+
 export default function OfflineSync() {
   const [status, setStatus] = useState("Preparation du guide...")
   const [visible, setVisible] = useState(false)
@@ -62,7 +137,15 @@ export default function OfflineSync() {
 
         await saveLocalImagesOffline()
 
-        const [attractions, mapPoints, infos, shows, alerts, openingDays] =
+        const [
+          attractions,
+          mapPoints,
+          infos,
+          shows,
+          alerts,
+          openingDays,
+          entityRules,
+        ] =
           await Promise.all([
             supabase.from("attractions").select(`
               *,
@@ -74,7 +157,9 @@ export default function OfflineSync() {
               .select(`
                 *,
                 area:park_areas(*),
-                attraction:attractions!map_points_attraction_id_fkey(*)
+                attraction:attractions!map_points_attraction_id_fkey(*),
+                restaurant:restaurants!map_points_restaurant_id_fkey(*),
+                shop:shops!map_points_shop_id_fkey(*)
               `)
               .eq("is_active", true),
 
@@ -100,18 +185,32 @@ export default function OfflineSync() {
               .from("opening_days")
               .select(`
                 *,
-                schedule:opening_schedules(*)
+                schedule:entity_opening_schedules(*)
               `)
               .gte("date", `${year}-01-01`)
               .lte("date", `${year}-12-31`)
               .order("date"),
+
+            supabase
+              .from("entity_opening_rules")
+              .select(`
+                *,
+                schedule:opening_schedules(*)
+              `)
+              .eq("is_active", true),
           ])
 
-        const attractionsData = attractions.data || []
+        const entityRulesData = entityRules.data || []
+        const attractionsData = attachOpeningRulesToItems(
+          attractions.data || [],
+          "attraction",
+          entityRulesData
+        )
         const openingDaysData = openingDays.data || []
-        const mapPointsData = attachAttractionsToMapPoints(
-          mapPoints.data || [],
-          attractionsData
+        const mapPointsData = attachOpeningRulesToItems(
+          attachAttractionsToMapPoints(mapPoints.data || [], attractionsData),
+          "map_point",
+          entityRulesData
         )
 
         const showTimesData = (shows.data || []).filter(

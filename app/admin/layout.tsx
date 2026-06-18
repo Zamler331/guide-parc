@@ -9,6 +9,7 @@ const adminLinks = [
   { href: "/admin/infos", label: "Infos", icon: "Info" },
   { href: "/admin/alerts", label: "Alertes", icon: "Alert" },
   { href: "/admin/opening-hours", label: "Horaires", icon: "Time" },
+  { href: "/admin/specific-opening-hours", label: "Horaires specifiques", icon: "Time+" },
   { href: "/admin/analytics", label: "Statistiques", icon: "Stats" },
 ]
 

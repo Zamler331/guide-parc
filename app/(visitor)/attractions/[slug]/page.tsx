@@ -8,6 +8,7 @@ import Card from "@/components/ui/Card"
 import SectionTitle from "@/components/ui/SectionTitle"
 import { getAttractionBySlug } from "@/lib/attractions"
 import {
+  getEffectiveOpeningDisplay,
   getAttractionVisitorStatus,
   getTodayOpening,
 } from "@/lib/opening-hours"
@@ -64,6 +65,7 @@ export default async function AttractionPage({
   if (!attraction) return notFound()
 
   const visitorStatus = getAttractionVisitorStatus(attraction, opening)
+  const openingDisplay = getEffectiveOpeningDisplay(attraction, opening)
 
   if (visitorStatus === "hidden") return notFound()
 
@@ -128,6 +130,25 @@ export default async function AttractionPage({
             </p>
           )}
         </Card>
+
+        {openingDisplay && (
+          <Card className="p-5">
+            <SectionTitle title="Horaires du jour" />
+            <div className="rounded-2xl bg-emerald-50 px-4 py-3">
+              <p className="text-xs font-black uppercase text-emerald-600">
+                {openingDisplay.sourceLabel}
+              </p>
+              <p className="mt-1 text-lg font-black text-emerald-900">
+                {openingDisplay.label}
+              </p>
+              {openingDisplay.note && (
+                <p className="mt-2 text-sm font-semibold text-emerald-700">
+                  {openingDisplay.note}
+                </p>
+              )}
+            </div>
+          </Card>
+        )}
 
         <Card className="p-5">
           <SectionTitle title="A savoir" />

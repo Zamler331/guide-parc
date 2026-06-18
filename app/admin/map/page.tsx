@@ -1,12 +1,18 @@
 import { getAllMapPoints } from "@/lib/map-points"
 import { getAttractions } from "@/lib/attractions"
 import { getParkAreas } from "@/lib/park-areas"
+import {
+  getEntityOpeningRules,
+  getEntityOpeningSchedules,
+} from "@/lib/opening-hours"
 import AdminMapEditor from "@/components/map/AdminMapEditor"
 
 export default async function AdminMapPage() {
   const points = await getAllMapPoints()
   const attractions = await getAttractions()
   const areas = await getParkAreas()
+  const schedules = await getEntityOpeningSchedules()
+  const openingRules = await getEntityOpeningRules()
 
   return (
     <div className="space-y-6">
@@ -21,6 +27,8 @@ export default async function AdminMapPage() {
         points={points}
         attractions={attractions}
         areas={areas}
+        schedules={schedules}
+        openingRules={openingRules}
       />
     </div>
   )
