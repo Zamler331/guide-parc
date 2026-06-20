@@ -4,8 +4,8 @@ import { getAttractions } from "@/lib/attractions"
 import { getTodayOpening } from "@/lib/opening-hours"
 
 export default async function AttractionsPage() {
-  const attractions = await getAttractions()
-  const opening = await getTodayOpening()
+  const attractions = await getAttractions({ fast: true })
+  const opening = await getTodayOpening({ fast: true })
 
   return (
     <main className="min-h-screen bg-slate-100">

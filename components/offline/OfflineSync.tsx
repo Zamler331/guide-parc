@@ -265,7 +265,11 @@ export default function OfflineSync() {
       }
     }
 
-    syncData()
+    const syncTimer = window.setTimeout(() => {
+      syncData()
+    }, 1200)
+
+    return () => window.clearTimeout(syncTimer)
   }, [])
 
   useEffect(() => {

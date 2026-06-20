@@ -31,7 +31,7 @@ export default function OfflineMap({
   useEffect(() => {
     const cachedOpening = readFromCache("today_opening")
 
-    if (!navigator.onLine && cachedOpening) {
+    if ((!navigator.onLine || !opening) && cachedOpening) {
       setTodayOpening(cachedOpening)
       return
     }

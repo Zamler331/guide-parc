@@ -28,15 +28,15 @@ function getStatusTone(status: string) {
 function getThrillLabel(level?: number) {
   switch (level) {
     case 1:
-      return "Tres doux"
+      return "Très doux"
     case 2:
       return "Doux"
     case 3:
-      return "Modere"
+      return "Modére"
     case 4:
       return "Sensations fortes"
     case 5:
-      return "Extreme"
+      return "Extrême"
     default:
       return null
   }
@@ -155,7 +155,7 @@ export default async function AttractionPage({
           <div className="grid grid-cols-2 gap-3">
             {attraction.ride_type && <InfoBadge label={attraction.ride_type} />}
             {attraction.opening_year && (
-              <InfoBadge label={`Depuis ${attraction.opening_year}`} />
+              <InfoBadge label={`Ouvert en ${attraction.opening_year}`} />
             )}
             {attraction.manufacturer && (
               <InfoBadge label={attraction.manufacturer} />
@@ -164,10 +164,10 @@ export default async function AttractionPage({
               <InfoBadge label={attraction.ride_duration} />
             )}
             {attraction.min_height && (
-              <InfoBadge label={`Accompagne des ${attraction.min_height} cm`} />
+              <InfoBadge label={`Accompagné dès ${attraction.min_height} cm`} />
             )}
             {attraction.accompanied_height && (
-              <InfoBadge label={`Seul des ${attraction.accompanied_height} cm`} />
+              <InfoBadge label={`Seul dès ${attraction.accompanied_height} cm`} />
             )}
             {attraction.is_family && <InfoBadge label="Familiale" />}
             {attraction.is_kids && <InfoBadge label="Enfants" />}

@@ -9,7 +9,7 @@ export default async function VisitorLayout({
 }: {
   children: React.ReactNode
 }) {
-  const alerts = await getActiveAlerts()
+  const alerts = await getActiveAlerts({ fast: true })
 
   return (
     <div className="flex h-dvh justify-center overflow-hidden bg-gray-100">

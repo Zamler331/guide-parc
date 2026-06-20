@@ -1,4 +1,5 @@
 import { supabase } from "./supabase"
+import { FastDataOptions, withFastFallback } from "./fast-data"
 
 export async function getShows() {
   const { data, error } = await supabase
@@ -47,18 +48,23 @@ export async function getShowTimes() {
   return data || []
 }
 
-export async function getTodayShowTimes() {
+export async function getTodayShowTimes(options: FastDataOptions = {}) {
   const today = new Date().toISOString().split("T")[0]
 
-  const { data, error } = await supabase
-    .from("show_times")
-    .select(`
-      *,
-      show:shows(*)
-    `)
-    .eq("show_date", today)
-    .eq("is_active", true)
-    .order("start_time", { ascending: true })
+  const { data, error } = await withFastFallback(
+    supabase
+      .from("show_times")
+      .select(`
+        *,
+        show:shows(*)
+      `)
+      .eq("show_date", today)
+      .eq("is_active", true)
+      .order("start_time", { ascending: true }),
+    { data: [] as any[], error: null },
+    "getTodayShowTimes timeout",
+    options
+  )
 
   if (error) {
     console.error("Erreur getTodayShowTimes:", JSON.stringify(error, null, 2))

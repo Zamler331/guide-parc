@@ -4,7 +4,7 @@ import PageHeader from "@/components/ui/PageHeader"
 import { getPracticalInfos } from "@/lib/practical-infos"
 
 export default async function InfosPage() {
-  const infos = await getPracticalInfos()
+  const infos = await getPracticalInfos({ fast: true })
 
   return (
     <main className="min-h-screen bg-slate-100">

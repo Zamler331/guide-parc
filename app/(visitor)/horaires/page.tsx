@@ -4,7 +4,7 @@ import { getOpeningDaysForYear } from "@/lib/opening-hours"
 
 export default async function HorairesPage() {
   const year = new Date().getFullYear()
-  const openingDays = await getOpeningDaysForYear(year)
+  const openingDays = await getOpeningDaysForYear(year, { fast: true })
 
   return (
     <main className="min-h-screen bg-slate-100">

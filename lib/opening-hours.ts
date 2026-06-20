@@ -1,6 +1,7 @@
 import { supabase } from "./supabase"
 import { connection } from "next/server"
 import { getEffectiveOpeningRule } from "./opening-display"
+import { FastDataOptions, withFastFallback } from "./fast-data"
 
 export {
   formatOpeningTime,
@@ -61,7 +62,7 @@ export async function getOpeningDays() {
   return data || []
 }
 
-export async function getTodayOpening() {
+export async function getTodayOpening(options: FastDataOptions = {}) {
   await connection()
 
   const now = new Date()
@@ -72,14 +73,19 @@ export async function getTodayOpening() {
 
   const today = `${year}-${month}-${day}`
 
-  const { data, error } = await supabase
-    .from("opening_days")
-    .select(`
-      *,
-      schedule:opening_schedules(*)
-    `)
-    .eq("date", today)
-    .maybeSingle()
+  const { data, error } = await withFastFallback(
+    supabase
+      .from("opening_days")
+      .select(`
+        *,
+        schedule:opening_schedules(*)
+      `)
+      .eq("date", today)
+      .maybeSingle(),
+    { data: null, error: null },
+    "getTodayOpening timeout",
+    options
+  )
 
   if (error) {
     console.error("Erreur getTodayOpening:", JSON.stringify(error, null, 2))
@@ -89,21 +95,29 @@ export async function getTodayOpening() {
   return data
 }
 
-export async function getOpeningDaysForYear(year: number) {
+export async function getOpeningDaysForYear(
+  year: number,
+  options: FastDataOptions = {}
+) {
   await connection()
 
   const start = `${year}-01-01`
   const end = `${year}-12-31`
 
-  const { data, error } = await supabase
-    .from("opening_days")
-    .select(`
-      *,
-      schedule:opening_schedules(*)
-    `)
-    .gte("date", start)
-    .lte("date", end)
-    .order("date")
+  const { data, error } = await withFastFallback(
+    supabase
+      .from("opening_days")
+      .select(`
+        *,
+        schedule:opening_schedules(*)
+      `)
+      .gte("date", start)
+      .lte("date", end)
+      .order("date"),
+    { data: [] as any[], error: null },
+    "getOpeningDaysForYear timeout",
+    options
+  )
 
   if (error) {
     console.error("Erreur getOpeningDaysForYear:", error)

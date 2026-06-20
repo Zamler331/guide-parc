@@ -203,7 +203,7 @@ export default function AttractionEditor({
     e.preventDefault()
 
     const cleanName = name.trim()
-    const cleanSlug = slug.trim() || slugify(cleanName)
+    const cleanSlug = slugify(slug.trim() || cleanName)
 
     if (!cleanName || !cleanSlug) {
       alert("Le nom de l'attraction est obligatoire")

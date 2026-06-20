@@ -12,6 +12,10 @@ type Attraction = {
   park_areas?: { name: string }
 }
 
+function getAttractionHref(slug: string) {
+  return `/attractions/${encodeURIComponent(slug)}`
+}
+
 function getStatusLabel(status?: string) {
   switch (status) {
     case "maintenance":
@@ -53,7 +57,7 @@ export default function AttractionCard({
 
   return (
     <Link
-      href={`/attractions/${attraction.slug}`}
+      href={getAttractionHref(attraction.slug)}
       className="group block overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition active:scale-[0.98]"
     >
       <div className="relative h-44 bg-slate-200">

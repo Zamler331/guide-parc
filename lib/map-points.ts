@@ -1,18 +1,38 @@
 import { supabase } from "./supabase"
 import { connection } from "next/server"
+import { FastDataOptions, withFastFallback } from "./fast-data"
 
-async function getEntityRules(targetType: string, targetIds: string[]) {
+function slugify(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+}
+
+async function getEntityRules(
+  targetType: string,
+  targetIds: string[],
+  options: FastDataOptions = {}
+) {
   if (targetIds.length === 0) return []
 
-  const { data, error } = await supabase
-    .from("entity_opening_rules")
-    .select(`
-      *,
-      schedule:entity_opening_schedules(*)
-    `)
-    .eq("target_type", targetType)
-    .eq("is_active", true)
-    .in("target_id", targetIds)
+  const { data, error } = await withFastFallback(
+    supabase
+      .from("entity_opening_rules")
+      .select(`
+        *,
+        schedule:entity_opening_schedules(*)
+      `)
+      .eq("target_type", targetType)
+      .eq("is_active", true)
+      .in("target_id", targetIds),
+    { data: [] as any[], error: null },
+    `getMapEntityRules ${targetType} timeout`,
+    options
+  )
 
   if (error) {
     console.error("Erreur horaires points carte:", JSON.stringify(error, null, 2))
@@ -73,7 +93,7 @@ function getRuleForTarget(rulesById: Map<any, any[]>, targetId?: string | null) 
   return sortRulesByPriority(rulesById.get(targetId) || []).find(ruleAppliesToday) || null
 }
 
-async function attachOpeningRules(points: any[]) {
+async function attachOpeningRules(points: any[], options: FastDataOptions = {}) {
   const pointIds = points.map((point) => point.id)
   const attractionIds = Array.from(
     new Set(
@@ -98,11 +118,11 @@ async function attachOpeningRules(points: any[]) {
 
   const [pointRules, attractionRules, restaurantRules, shopRules, areaRules] =
     await Promise.all([
-      getEntityRules("map_point", pointIds),
-      getEntityRules("attraction", attractionIds),
-      getEntityRules("restaurant", restaurantIds),
-      getEntityRules("shop", shopIds),
-      getEntityRules("park_area", areaIds),
+      getEntityRules("map_point", pointIds, options),
+      getEntityRules("attraction", attractionIds, options),
+      getEntityRules("restaurant", restaurantIds, options),
+      getEntityRules("shop", shopIds, options),
+      getEntityRules("park_area", areaIds, options),
     ])
 
   const pointRulesById = groupRulesByTarget(pointRules)
@@ -143,10 +163,13 @@ async function attachOpeningRules(points: any[]) {
 
 function getAttractionSlugFromTargetUrl(targetUrl?: string | null) {
   const match = targetUrl?.match(/^\/attractions\/([^/?#]+)/)
-  return match ? decodeURIComponent(match[1]) : null
+  return match ? slugify(decodeURIComponent(match[1])) : null
 }
 
-async function attachAttractionsFromTargetUrl(points: any[]) {
+async function attachAttractionsFromTargetUrl(
+  points: any[],
+  options: FastDataOptions = {}
+) {
   const missingSlugs = Array.from(
     new Set(
       points
@@ -158,10 +181,12 @@ async function attachAttractionsFromTargetUrl(points: any[]) {
 
   if (missingSlugs.length === 0) return points
 
-  const { data, error } = await supabase
-    .from("attractions")
-    .select("*")
-    .in("slug", missingSlugs)
+  const { data, error } = await withFastFallback(
+    supabase.from("attractions").select("*").in("slug", missingSlugs),
+    { data: [] as any[], error: null },
+    "attachAttractionsFromTargetUrl timeout",
+    options
+  )
 
   if (error) {
     console.error("Erreur attractions liées aux points:", JSON.stringify(error, null, 2))
@@ -182,28 +207,33 @@ async function attachAttractionsFromTargetUrl(points: any[]) {
   })
 }
 
-export async function getMapPoints() {
+export async function getMapPoints(options: FastDataOptions = {}) {
   await connection()
 
-  const { data, error } = await supabase
-    .from("map_points")
-    .select(`
-      *,
-      area:park_areas(*),
-      attraction:attractions!map_points_attraction_id_fkey(*),
-      restaurant:restaurants!map_points_restaurant_id_fkey(*),
-      shop:shops!map_points_shop_id_fkey(*)
-    `)
-    .eq("is_active", true)
-    .order("name", { ascending: true })
+  const { data, error } = await withFastFallback(
+    supabase
+      .from("map_points")
+      .select(`
+        *,
+        area:park_areas(*),
+        attraction:attractions!map_points_attraction_id_fkey(*),
+        restaurant:restaurants!map_points_restaurant_id_fkey(*),
+        shop:shops!map_points_shop_id_fkey(*)
+      `)
+      .eq("is_active", true)
+      .order("name", { ascending: true }),
+    { data: [] as any[], error: null },
+    "getMapPoints timeout",
+    options
+  )
 
   if (error) {
     console.error("Erreur getMapPoints:", JSON.stringify(error, null, 2))
     return []
   }
 
-  const points = await attachAttractionsFromTargetUrl(data || [])
-  return attachOpeningRules(points)
+  const points = await attachAttractionsFromTargetUrl(data || [], options)
+  return attachOpeningRules(points, options)
 }
 
 export async function getAllMapPoints() {

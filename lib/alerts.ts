@@ -1,4 +1,5 @@
 import { supabase } from "./supabase"
+import { FastDataOptions, withFastFallback } from "./fast-data"
 
 export async function getAlerts() {
   const { data, error } = await supabase
@@ -14,11 +15,13 @@ export async function getAlerts() {
   return data || []
 }
 
-export async function getActiveAlerts() {
-  const { data, error } = await supabase
-    .from("alerts")
-    .select("*")
-    .eq("is_active", true)
+export async function getActiveAlerts(options: FastDataOptions = {}) {
+  const { data, error } = await withFastFallback(
+    supabase.from("alerts").select("*").eq("is_active", true),
+    { data: [] as any[], error: null },
+    "getActiveAlerts timeout",
+    options
+  )
 
   if (error) {
     console.error("Erreur getActiveAlerts:", JSON.stringify(error, null, 2))

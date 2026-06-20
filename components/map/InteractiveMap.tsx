@@ -22,6 +22,25 @@ function getType(type: string) {
   return TYPES.find((item) => item.value === type) || TYPES[0]
 }
 
+function slugify(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+}
+
+function normalizeTargetUrl(targetUrl?: string | null) {
+  const match = targetUrl?.match(/^\/attractions\/([^/?#]+)/)
+  if (!match) return targetUrl || "/carte"
+
+  return `/attractions/${encodeURIComponent(
+    slugify(decodeURIComponent(match[1]))
+  )}`
+}
+
 function getTypeStyle(type: string) {
   switch (type) {
     case "attraction":
@@ -45,10 +64,10 @@ function getTypeStyle(type: string) {
 
 function getPointLink(point: any) {
   if (point.type === "attraction" && point.attraction?.slug) {
-    return `/attractions/${point.attraction.slug}`
+    return `/attractions/${encodeURIComponent(slugify(point.attraction.slug))}`
   }
 
-  return point.target_url || "/carte"
+  return normalizeTargetUrl(point.target_url)
 }
 
 function getPointName(point: any) {
