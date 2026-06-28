@@ -3,6 +3,8 @@ import TrackEventOnMount from "@/components/analytics/TrackEventOnMount"
 import PageHeader from "@/components/ui/PageHeader"
 import { getTodayShowTimes } from "@/lib/shows"
 
+export const dynamic = "force-dynamic"
+
 export default async function ProgrammePage() {
   const showTimes = await getTodayShowTimes({ fast: true })
 

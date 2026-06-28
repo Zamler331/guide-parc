@@ -8,6 +8,10 @@ export function saveToCache(key: string, data: any) {
       savedAt: new Date().toISOString(),
     })
   )
+
+  window.dispatchEvent(
+    new CustomEvent("offline-cache-updated", { detail: { key } })
+  )
 }
 
 export function readFromCache(key: string) {

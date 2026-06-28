@@ -16,7 +16,7 @@ export default async function VisitorLayout({
       <div className="flex h-full w-full max-w-md flex-col overflow-hidden bg-white shadow-sm">
         <OfflineAlertTicker alerts={alerts} />
 
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="min-h-0 flex-1 overflow-y-auto pb-[calc(3.75rem+env(safe-area-inset-bottom))]">
           <AnalyticsTracker />
           {children}
         </div>

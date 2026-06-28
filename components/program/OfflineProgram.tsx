@@ -2,19 +2,11 @@
 
 import ShowCard from "./ShowCard"
 import { useOfflineData } from "@/hooks/useOfflineData"
-
-function getTodayKey() {
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = String(now.getMonth() + 1).padStart(2, "0")
-  const day = String(now.getDate()).padStart(2, "0")
-
-  return `${year}-${month}-${day}`
-}
+import { getLocalDateKey } from "@/lib/date"
 
 export default function OfflineProgram({ showTimes }: { showTimes: any[] }) {
   const data = useOfflineData("shows", showTimes)
-  const today = getTodayKey()
+  const today = getLocalDateKey()
 
   const todayShowTimes = data
     .filter((showTime: any) => showTime.show_date === today)

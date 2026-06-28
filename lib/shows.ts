@@ -1,5 +1,6 @@
 import { supabase } from "./supabase"
 import { FastDataOptions, withFastFallback } from "./fast-data"
+import { getLocalDateKey } from "./date"
 
 export async function getShows() {
   const { data, error } = await supabase
@@ -49,7 +50,7 @@ export async function getShowTimes() {
 }
 
 export async function getTodayShowTimes(options: FastDataOptions = {}) {
-  const today = new Date().toISOString().split("T")[0]
+  const today = getLocalDateKey()
 
   const { data, error } = await withFastFallback(
     supabase
@@ -74,15 +75,6 @@ export async function getTodayShowTimes(options: FastDataOptions = {}) {
   return (data || []).filter((time) => time.show?.status === "active")
 }
 
-function getTodayKey() {
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = String(now.getMonth() + 1).padStart(2, "0")
-  const day = String(now.getDate()).padStart(2, "0")
-
-  return `${year}-${month}-${day}`
-}
-
 export async function getShowById(id: string) {
   const { data, error } = await supabase
     .from("shows")
@@ -99,7 +91,7 @@ export async function getShowById(id: string) {
 }
 
 export async function getTodayShowTimesForShow(showId: string) {
-  const today = getTodayKey()
+  const today = getLocalDateKey()
 
   const { data, error } = await supabase
     .from("show_times")

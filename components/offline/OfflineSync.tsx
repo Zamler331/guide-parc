@@ -8,14 +8,10 @@ import {
 } from "@/lib/offline-map-image"
 import { saveOfflinePage } from "@/lib/offline-pages"
 import { supabase } from "@/lib/supabase"
+import { getLocalDateKey } from "@/lib/date"
 
 function getTodayKey() {
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = String(now.getMonth() + 1).padStart(2, "0")
-  const day = String(now.getDate()).padStart(2, "0")
-
-  return `${year}-${month}-${day}`
+  return getLocalDateKey()
 }
 
 function getAttractionSlugFromTargetUrl(targetUrl?: string | null) {

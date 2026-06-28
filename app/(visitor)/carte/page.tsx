@@ -8,7 +8,7 @@ export default async function MapPage() {
   const opening = await getTodayOpening({ fast: true })
 
   return (
-    <main className="h-full overflow-hidden">
+    <main className="-mb-[calc(3.75rem+env(safe-area-inset-bottom))] h-[calc(100%+3.75rem+env(safe-area-inset-bottom))] overflow-hidden">
       <TrackEventOnMount eventName="map_opened" page="/carte" />
       <OfflineMap points={points} opening={opening} />
     </main>

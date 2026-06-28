@@ -8,16 +8,33 @@ export function useOfflineData(cacheKey: string, serverData: any[]) {
   const serverDataSignature = JSON.stringify(serverData)
 
   useEffect(() => {
-    const cached = readFromCache(cacheKey)
+    function applyData() {
+      const cached = readFromCache(cacheKey)
 
-    if (!navigator.onLine || serverData.length === 0) {
-      if (cached) {
-        setData(cached)
+      if (!navigator.onLine || serverData.length === 0) {
+        if (cached) {
+          setData(cached)
+        }
+        return
       }
-      return
+
+      setData(serverData)
     }
 
-    setData(serverData)
+    function handleCacheUpdated(event: Event) {
+      const cacheEvent = event as CustomEvent<{ key?: string }>
+
+      if (cacheEvent.detail?.key === cacheKey) {
+        applyData()
+      }
+    }
+
+    applyData()
+    window.addEventListener("offline-cache-updated", handleCacheUpdated)
+
+    return () => {
+      window.removeEventListener("offline-cache-updated", handleCacheUpdated)
+    }
   }, [cacheKey, serverDataSignature])
 
   return data
