@@ -59,10 +59,12 @@ export default async function AttractionPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const attraction = await getAttractionBySlug(slug)
-  const opening = await getTodayOpening()
+  const [attraction, opening] = await Promise.all([
+    getAttractionBySlug(slug, { fast: true }),
+    getTodayOpening({ fast: true }),
+  ])
 
-  if (!attraction) return notFound()
+  if (!attraction) return <SlowAttractionFallback />
 
   const visitorStatus = getAttractionVisitorStatus(attraction, opening)
   const openingDisplay = getEffectiveOpeningDisplay(attraction, opening)
@@ -200,5 +202,24 @@ function InfoBadge({ label }: { label: string }) {
     <div className="rounded-2xl bg-slate-100 px-4 py-3 text-sm font-bold leading-tight text-slate-700">
       {label}
     </div>
+  )
+}
+
+function SlowAttractionFallback() {
+  return (
+    <main className="min-h-screen bg-slate-100 px-4 py-6">
+      <Card className="p-5">
+        <SectionTitle title="Connexion lente" />
+        <p className="text-sm font-semibold leading-6 text-slate-600">
+          Les donnees de cette attraction se chargent en arriere-plan.
+        </p>
+        <Link
+          href="/attractions"
+          className="mt-4 inline-flex rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white active:scale-95"
+        >
+          Retour aux attractions
+        </Link>
+      </Card>
+    </main>
   )
 }

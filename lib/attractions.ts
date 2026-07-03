@@ -150,28 +150,15 @@ export async function getAttractions(options: FastDataOptions = {}) {
   return attachOpeningRules(data || [], options)
 }
 
-export async function getAttractionBySlug(slug: string) {
+export async function getAttractionBySlug(
+  slug: string,
+  options: FastDataOptions = {}
+): Promise<any | null> {
   await connection()
   const normalizedSlug = slugify(slug)
 
-  const { data, error } = await supabase
-    .from("attractions")
-    .select(`
-      *,
-      park_areas (
-        name
-      )
-    `)
-    .eq("slug", slug)
-    .maybeSingle()
-
-  if (error) {
-    console.error("Erreur getAttractionBySlug:", error)
-    return null
-  }
-
-  if (!data && normalizedSlug && normalizedSlug !== slug) {
-    const { data: normalizedData, error: normalizedError } = await supabase
+  const { data, error } = await withFastFallback(
+    supabase
       .from("attractions")
       .select(`
         *,
@@ -179,8 +166,34 @@ export async function getAttractionBySlug(slug: string) {
           name
         )
       `)
-      .eq("slug", normalizedSlug)
-      .maybeSingle()
+      .eq("slug", slug)
+      .maybeSingle(),
+    { data: null, error: null },
+    "getAttractionBySlug timeout",
+    options
+  )
+
+  if (error) {
+    console.error("Erreur getAttractionBySlug:", error)
+    return null
+  }
+
+  if (!data && normalizedSlug && normalizedSlug !== slug) {
+    const { data: normalizedData, error: normalizedError } = await withFastFallback(
+      supabase
+        .from("attractions")
+        .select(`
+          *,
+          park_areas (
+            name
+          )
+        `)
+        .eq("slug", normalizedSlug)
+        .maybeSingle(),
+      { data: null, error: null },
+      "getAttractionBySlug normalized timeout",
+      options
+    )
 
     if (normalizedError) {
       console.error("Erreur getAttractionBySlug normalized:", normalizedError)
@@ -189,12 +202,12 @@ export async function getAttractionBySlug(slug: string) {
 
     if (!normalizedData) return null
 
-    const [attraction] = await attachOpeningRules([normalizedData])
+    const [attraction] = await attachOpeningRules([normalizedData], options)
     return attraction
   }
 
   if (!data) return null
 
-  const [attraction] = await attachOpeningRules([data])
+  const [attraction] = await attachOpeningRules([data], options)
   return attraction
 }

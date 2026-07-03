@@ -1,7 +1,6 @@
 export const dynamic = "force-dynamic"
 
 import Link from "next/link"
-import { notFound } from "next/navigation"
 import Badge from "@/components/ui/Badge"
 import Card from "@/components/ui/Card"
 import SectionTitle from "@/components/ui/SectionTitle"
@@ -19,11 +18,11 @@ export default async function ShowPage({
 }) {
   const { slug } = await params
   const decodedSlug = decodeURIComponent(slug)
-  const show = await getShowBySlug(decodedSlug)
+  const show = await getShowBySlug(decodedSlug, { fast: true })
 
-  if (!show) return notFound()
+  if (!show) return <SlowShowFallback />
 
-  const showTimes = await getTodayShowTimesForShow(show.id)
+  const showTimes = await getTodayShowTimesForShow(show.id, { fast: true })
 
   return (
     <main className="min-h-screen bg-slate-100 pb-6">
@@ -109,6 +108,25 @@ export default async function ShowPage({
           </Card>
         )}
       </section>
+    </main>
+  )
+}
+
+function SlowShowFallback() {
+  return (
+    <main className="min-h-screen bg-slate-100 px-4 py-6">
+      <Card className="p-5">
+        <SectionTitle title="Connexion lente" />
+        <p className="text-sm font-semibold leading-6 text-slate-600">
+          Les donnees de ce spectacle se chargent en arriere-plan.
+        </p>
+        <Link
+          href="/programme"
+          className="mt-4 inline-flex rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white active:scale-95"
+        >
+          Retour au programme
+        </Link>
+      </Card>
     </main>
   )
 }

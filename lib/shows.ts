@@ -90,16 +90,24 @@ export async function getShowById(id: string) {
   return data
 }
 
-export async function getTodayShowTimesForShow(showId: string) {
+export async function getTodayShowTimesForShow(
+  showId: string,
+  options: FastDataOptions = {}
+) {
   const today = getLocalDateKey()
 
-  const { data, error } = await supabase
-    .from("show_times")
-    .select("*")
-    .eq("show_id", showId)
-    .eq("show_date", today)
-    .eq("is_active", true)
-    .order("start_time", { ascending: true })
+  const { data, error } = await withFastFallback(
+    supabase
+      .from("show_times")
+      .select("*")
+      .eq("show_id", showId)
+      .eq("show_date", today)
+      .eq("is_active", true)
+      .order("start_time", { ascending: true }),
+    { data: [] as any[], error: null },
+    "getTodayShowTimesForShow timeout",
+    options
+  )
 
   if (error) {
     console.error("Erreur getTodayShowTimesForShow:", JSON.stringify(error, null, 2))
@@ -109,12 +117,20 @@ export async function getTodayShowTimesForShow(showId: string) {
   return data || []
 }
 
-export async function getShowBySlug(slug: string) {
-  const { data, error } = await supabase
-    .from("shows")
-    .select("*")
-    .eq("slug", slug)
-    .maybeSingle()
+export async function getShowBySlug(
+  slug: string,
+  options: FastDataOptions = {}
+): Promise<any | null> {
+  const { data, error } = await withFastFallback(
+    supabase
+      .from("shows")
+      .select("*")
+      .eq("slug", slug)
+      .maybeSingle(),
+    { data: null, error: null },
+    "getShowBySlug timeout",
+    options
+  )
 
   if (error) {
     console.error("Erreur getShowBySlug:", error)
