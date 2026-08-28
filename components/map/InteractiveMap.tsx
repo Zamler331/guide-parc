@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react"
 import Link from "next/link"
 import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch"
+import { useAppearance } from "@/components/appearance/AppearanceContext"
 import { getEffectiveOpeningDisplay } from "@/lib/opening-display"
 
 const TYPES = [
@@ -16,7 +17,21 @@ const TYPES = [
   { value: "show", label: "Spectacles", shortLabel: "Show" },
 ]
 
-const ATTRACTION_ICON_SRC = "/attraction-map-icon.png"
+const CLUSTER_FADE_START = 1.45
+const CLUSTER_FADE_END = 2.05
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value))
+}
+
+function smoothStep(value: number, start: number, end: number) {
+  const progress = clamp((value - start) / (end - start), 0, 1)
+  return progress * progress * (3 - 2 * progress)
+}
+
+function getCounterScale(scale: number) {
+  return 1 / Math.pow(scale, 0.88)
+}
 
 function getType(type: string) {
   return TYPES.find((item) => item.value === type) || TYPES[0]
@@ -39,27 +54,6 @@ function normalizeTargetUrl(targetUrl?: string | null) {
   return `/attractions/${encodeURIComponent(
     slugify(decodeURIComponent(match[1]))
   )}`
-}
-
-function getTypeStyle(type: string) {
-  switch (type) {
-    case "attraction":
-      return "bg-red-500 text-white"
-    case "restaurant":
-      return "bg-orange-500 text-white"
-    case "shop":
-      return "bg-purple-500 text-white"
-    case "toilet":
-      return "bg-blue-500 text-white"
-    case "first_aid":
-      return "bg-green-600 text-white"
-    case "parking":
-      return "bg-slate-800 text-white"
-    case "show":
-      return "bg-pink-500 text-white"
-    default:
-      return "bg-white text-slate-700"
-  }
 }
 
 function getPointLink(point: any) {
@@ -88,10 +82,23 @@ function getPointDescription(point: any) {
     : point.short_description
 }
 
-function AttractionMarkerIcon() {
+function getPointColor(type: string, colors: Record<string, string>) {
+  return colors[type] || "#111827"
+}
+
+function getPointIcon(
+  type: string,
+  icons: Record<string, string>,
+  attractionIconUrl: string
+) {
+  if (type === "attraction") return icons.attraction || attractionIconUrl
+  return icons[type] || ""
+}
+
+function MarkerIcon({ src }: { src: string }) {
   return (
     <img
-      src={ATTRACTION_ICON_SRC}
+      src={src}
       alt=""
       className="h-6 w-6 object-contain"
       draggable={false}
@@ -173,6 +180,7 @@ export default function InteractiveMap({
   opening: any
   mapSrc?: string
 }) {
+  const appearance = useAppearance()
   const [filter, setFilter] = useState("all")
   const [selectedPoint, setSelectedPoint] = useState<any | null>(null)
   const [scale, setScale] = useState(1.2)
@@ -188,7 +196,15 @@ export default function InteractiveMap({
     [filteredPoints]
   )
 
-  const showClusters = scale < 1.75 && filter === "all"
+  const zoomProgress = smoothStep(scale, CLUSTER_FADE_START, CLUSTER_FADE_END)
+  const clusterOpacity = filter === "all" ? 1 - zoomProgress : 0
+  const pointOpacity = filter === "all" ? zoomProgress : 1
+  const showClusters = clusterOpacity > 0.04
+  const showPoints = pointOpacity > 0.04
+  const clusterPointerEvents = clusterOpacity > 0.55 ? "auto" : "none"
+  const pointPointerEvents =
+    filter !== "all" || pointOpacity > 0.35 ? "auto" : "none"
+  const counterScale = getCounterScale(scale)
   const selectedPointOpening = selectedPoint
     ? getEffectiveOpeningDisplay(selectedPoint, opening)
     : null
@@ -231,7 +247,11 @@ export default function InteractiveMap({
         pinch={{ step: 4 }}
         doubleClick={{ disabled: true }}
         panning={{ velocityDisabled: false }}
-        onZoom={(ref: any) => setScale(ref.state.scale)}
+        onTransform={(_, state) => {
+          setScale((current) =>
+            Math.abs(current - state.scale) < 0.01 ? current : state.scale
+          )
+        }}
       >
         {({ zoomIn, zoomOut, resetTransform, zoomToElement }: any) => (
           <>
@@ -282,8 +302,8 @@ export default function InteractiveMap({
                   draggable={false}
                 />
 
-                {showClusters
-                  ? clusters.map((cluster) => {
+                {showClusters &&
+                  clusters.map((cluster) => {
                       const areaName = cluster.area?.name || "Autres"
                       const areaColor = cluster.area?.color || "#111827"
                       const clusterId = `cluster-${cluster.areaId}`
@@ -303,11 +323,16 @@ export default function InteractiveMap({
                             }
                           }}
                           className="absolute"
+                          tabIndex={clusterPointerEvents === "none" ? -1 : 0}
                           style={{
                             left: `${cluster.displayX}%`,
                             top: `${cluster.displayY}%`,
-                            transform: `translate(-50%, -50%) scale(${1 / scale})`,
+                            opacity: clusterOpacity,
+                            pointerEvents: clusterPointerEvents,
+                            transform: `translate(-50%, -50%) scale(${counterScale})`,
                             transformOrigin: "center",
+                            transition:
+                              "opacity 180ms ease, transform 180ms ease",
                           }}
                           title={areaName}
                         >
@@ -324,10 +349,21 @@ export default function InteractiveMap({
                           </span>
                         </button>
                       )
-                    })
-                  : filteredPoints.map((point) => {
+                    })}
+
+                {showPoints &&
+                  filteredPoints.map((point) => {
                       const selected = selectedPoint?.id === point.id
                       const type = getType(point.type)
+                      const pointColor = getPointColor(
+                        point.type,
+                        appearance.map.pointColors
+                      )
+                      const pointIcon = getPointIcon(
+                        point.type,
+                        appearance.map.pointIcons,
+                        appearance.map.attractionIconUrl
+                      )
 
                       return (
                         <button
@@ -338,31 +374,36 @@ export default function InteractiveMap({
                             setSelectedPoint(point)
                           }}
                           className="absolute"
+                          tabIndex={pointPointerEvents === "none" ? -1 : 0}
                           style={{
                             left: `${point.x}%`,
                             top: `${point.y}%`,
-                            transform: `translate(-50%, -50%) scale(${1 / scale})`,
+                            opacity: pointOpacity,
+                            pointerEvents: pointPointerEvents,
+                            transform: `translate(-50%, -50%) scale(${counterScale})`,
                             transformOrigin: "center",
+                            transition:
+                              "opacity 160ms ease, transform 160ms ease",
                           }}
                           aria-label={getPointName(point)}
                         >
                           <span
-                            className={`flex h-9 min-w-9 items-center justify-center rounded-full border-2 border-white px-2 text-[9px] font-black shadow-lg transition ${
-                              getTypeStyle(point.type)
-                            } ${selected ? "ring-4 ring-white" : ""}`}
+                            className={`flex h-9 min-w-9 items-center justify-center rounded-full border-2 border-white px-2 text-[9px] font-black text-white shadow-lg transition ${
+                              selected ? "ring-4 ring-white" : ""
+                            }`}
                             style={{
                               backgroundColor:
-                                point.type === "attraction"
+                                point.type === "attraction" && pointIcon
                                   ? "#ffffff"
-                                  : point.area?.color || undefined,
+                                  : pointColor,
                               borderColor:
                                 point.type === "attraction"
-                                  ? point.area?.color || "#ffffff"
+                                  ? point.area?.color || pointColor
                                   : "#ffffff",
                             }}
                           >
-                            {point.type === "attraction" ? (
-                              <AttractionMarkerIcon />
+                            {pointIcon ? (
+                              <MarkerIcon src={pointIcon} />
                             ) : (
                               type.shortLabel
                             )}
@@ -400,17 +441,39 @@ export default function InteractiveMap({
                     className="h-full w-full object-cover"
                   />
                 ) : (
+                  (() => {
+                    const selectedPointColor = getPointColor(
+                      selectedPoint.type,
+                      appearance.map.pointColors
+                    )
+                    const selectedPointIcon = getPointIcon(
+                      selectedPoint.type,
+                      appearance.map.pointIcons,
+                      appearance.map.attractionIconUrl
+                    )
+
+                    return (
                   <div
-                    className={`flex h-full w-full items-center justify-center text-xs font-black uppercase ${getTypeStyle(
-                      selectedPoint.type
-                    )}`}
+                    className="flex h-full w-full items-center justify-center text-xs font-black uppercase text-white"
+                    style={{
+                      backgroundColor:
+                        selectedPoint.type === "attraction" && selectedPointIcon
+                          ? "#ffffff"
+                          : selectedPointColor,
+                      color:
+                        selectedPoint.type === "attraction" && selectedPointIcon
+                          ? selectedPointColor
+                          : "#ffffff",
+                    }}
                   >
-                    {selectedPoint.type === "attraction" ? (
-                      <AttractionMarkerIcon />
+                    {selectedPointIcon ? (
+                      <MarkerIcon src={selectedPointIcon} />
                     ) : (
                       getType(selectedPoint.type).shortLabel
                     )}
                   </div>
+                    )
+                  })()
                 )}
               </div>
 

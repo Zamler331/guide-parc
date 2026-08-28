@@ -9,6 +9,10 @@ import {
 import { saveOfflinePage } from "@/lib/offline-pages"
 import { supabase } from "@/lib/supabase"
 import { getLocalDateKey } from "@/lib/date"
+import {
+  APPEARANCE_CACHE_KEY,
+  mergeAppearanceSettings,
+} from "@/lib/appearance-defaults"
 
 function getTodayKey() {
   return getLocalDateKey()
@@ -141,6 +145,7 @@ export default function OfflineSync() {
           alerts,
           openingDays,
           entityRules,
+          appearance,
         ] =
           await Promise.all([
             supabase.from("attractions").select(`
@@ -194,6 +199,12 @@ export default function OfflineSync() {
                 schedule:opening_schedules(*)
               `)
               .eq("is_active", true),
+
+            supabase
+              .from("app_visual_profiles")
+              .select("settings")
+              .eq("status", "published")
+              .maybeSingle(),
           ])
 
         const entityRulesData = entityRules.data || []
@@ -211,6 +222,9 @@ export default function OfflineSync() {
 
         const showTimesData = (shows.data || []).filter(
           (time: any) => time.show?.status === "active"
+        )
+        const appearanceData = mergeAppearanceSettings(
+          appearance.data?.settings
         )
 
         await Promise.allSettled([
@@ -238,6 +252,10 @@ export default function OfflineSync() {
         ])
 
         await saveRemoteImagesOffline([
+          appearanceData.home.mascotImageUrl,
+          appearanceData.home.logoImageUrl,
+          appearanceData.map.attractionIconUrl,
+          ...Object.values(appearanceData.map.pointIcons),
           ...attractionsData.map((attraction: any) => attraction.image_url),
           ...showTimesData.map((time: any) => time.show?.image_url),
         ])
@@ -247,6 +265,7 @@ export default function OfflineSync() {
         saveToCache("practical_infos", infos.data || [])
         saveToCache("shows", showTimesData)
         saveToCache("alerts", alerts.data || [])
+        saveToCache(APPEARANCE_CACHE_KEY, appearanceData)
         saveToCache("opening_days", openingDaysData)
         saveToCache(
           "today_opening",

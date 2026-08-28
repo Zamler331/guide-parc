@@ -38,6 +38,12 @@ const adminLinks = [
     description: "Definir les jours et heures d'ouverture du parc",
   },
   {
+    href: "/admin/appearance",
+    icon: "Style",
+    title: "Apparence",
+    description: "Personnaliser l'accueil et les points de carte",
+  },
+  {
     href: "/admin/analytics",
     icon: "Stats",
     title: "Statistiques",
